@@ -1,0 +1,20 @@
+MuJoCo Pro Personal license activation key, number 67085, type 6.
+
+Issued to Bjorn Lutjens <lutjens@mit.edu>.
+
+Expires July 4, 2020.
+
+This file activates MuJoCo Pro on a single computer with id:
+LINUX_8bf1md_49ev4208a60e4c0646cdaa9996546763224
+
+Do not modify this file. Its entire content, including the
+plain text section, is used by the activation manager.
+
+a0dfe47714ef44387152ed071490069123900fd5a77122692c06b11684bc1d79
+f136d433183692195c5a0110028ca79635d414cd5f1db9c0a5c08239f7de847c
+7e34bb0b0254129966225ac6957f8e7e8247b5e8c90d6f1df385dfd36d0bc471
+3179b3045f5f4b5c5da133762edcde6c6b0f4aa366b17fbb4e24d54279d27880
+7ab49a8f05a2336a2dca81a629e34fb941dd85204e23124b0ca3f07fa59b35a0
+95b1c90662104452e29ea4723e37cf1dfc75b96c06f339ef7420ad28443cb8b0
+3e22d70a8e0fc1a710e8ca34516f22acda259fdd97a4774c1b30becfb515e2f3
+ab1f5cb6ffbe329b4e7ac25c60c319e3e00406d25e1f85c9b3ef16c2223806ed

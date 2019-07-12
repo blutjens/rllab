@@ -34,6 +34,13 @@ class Box2DEnv(Env):
     ):
         self.full_model_path = model_path
         if template_string is None:
+            
+            print('[WARNIGN] REPLACE THIS SUPER HACK in envs/box2d/box2d_env', model_path)
+            #model_path = "/env/lib/python3.6/site-packages/rllab-0.1.0-py3.6.egg/rllab/rllab/envs/box2d/models/cartpole.xml.mako"
+            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/cartpole.xml.mako"
+            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/double_pendulum.xml.mako"
+            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/stand_env.xml.mako"
+            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/mountain_car.xml.mako"
             if model_path.endswith(".mako"):
                 with open(model_path) as template_file:
                     template = mako.template.Template(
@@ -67,11 +74,13 @@ class Box2DEnv(Env):
     def _set_state(self, state):
         splitted = np.array(state).reshape((-1, 6))
         for body, body_state in zip(self.world.bodies, splitted):
+            print('setting state for body: with state:', body, body_state)
             xpos, ypos, apos, xvel, yvel, avel = body_state
             body.position = (xpos, ypos)
             body.angle = apos
             body.linearVelocity = (xvel, yvel)
             body.angularVelocity = avel
+            body.rod_pressure = -100
 
     @overrides
     def reset(self):
