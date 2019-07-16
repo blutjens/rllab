@@ -67,6 +67,12 @@ rllab/envs/box2d/parser/__init__.py
 rllab/envs/box2d/parser/xml_attr_types.py
 rllab/envs/box2d/parser/xml_box2d.py
 rllab/envs/box2d/parser/xml_types.py
+rllab/envs/envs/__init__.py
+rllab/envs/envs/constants.py
+rllab/envs/envs/metrics.py
+rllab/envs/envs/stand_bridge.py
+rllab/envs/envs/stand_env.py
+rllab/envs/envs/tasks.py
 rllab/envs/mujoco/__init__.py
 rllab/envs/mujoco/ant_env.py
 rllab/envs/mujoco/half_cheetah_env.py
@@ -241,6 +247,7 @@ rllab/sandbox/vime/experiments/__init__.py
 rllab/sandbox/vime/experiments/run_experiment_lite.py
 rllab/sandbox/vime/experiments/run_trpo.py
 rllab/sandbox/vime/experiments/run_trpo_expl.py
+rllab/sandbox/vime/experiments/run_trpo_stand.py
 rllab/sandbox/vime/experiments/run_vime_stand.py
 rllab/sandbox/vime/sampler/__init__.py
 rllab/sandbox/vime/sampler/parallel_sampler_expl.py
