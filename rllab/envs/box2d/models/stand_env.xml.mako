@@ -9,9 +9,10 @@
     cart_friction = 0.0005
     pole_friction = 0.000002
 
-    from envs import constants
-    ctrl_lim_low = constants.action_low
-    ctrl_lim_high = constants.action_high
+    # TODO: remove, I'm  overwrititng the action space either way in StandEnvVime
+    from rllab.envs.envs import constants
+    ctrl_lim_low = float(constants.action_low)
+    ctrl_lim_high = float(constants.action_high)
 
 %>
 

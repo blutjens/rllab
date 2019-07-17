@@ -39,8 +39,9 @@ class Box2DEnv(Env):
             #model_path = "/env/lib/python3.6/site-packages/rllab-0.1.0-py3.6.egg/rllab/rllab/envs/box2d/models/cartpole.xml.mako"
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/cartpole.xml.mako"
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/double_pendulum.xml.mako"
-            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/stand_env.xml.mako"
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/mountain_car.xml.mako"
+            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/stand_env.xml.mako"
+
             if model_path.endswith(".mako"):
                 with open(model_path) as template_file:
                     template = mako.template.Template(
@@ -229,9 +230,13 @@ class Box2DEnv(Env):
         """
         This method should not be overwritten.
         """
+        print('getting current obs')
         raw_obs = self.get_raw_obs()
+        print('raw obs', raw_obs)
         noisy_obs = self._inject_obs_noise(raw_obs)
+        print('noisy obs', noisy_obs)
         if self.position_only:
+            print('positio only', self._filter_position(noisy_obs))
             return self._filter_position(noisy_obs)
         return noisy_obs
 

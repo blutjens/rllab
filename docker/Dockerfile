@@ -155,6 +155,9 @@ RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip 
 # ========== GUI access ==========
 RUN apt-get -y install iputils-ping eog nano  
 
+# ========== Test stand env ==========
+RUN pip install pyfirmata
+
 # ========== Misc ==========
 # Import user environment variable
 ARG user
