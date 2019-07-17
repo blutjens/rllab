@@ -158,6 +158,9 @@ RUN apt-get -y install iputils-ping eog nano
 # ========== Test stand env ==========
 RUN pip install pyfirmata
 
+# ========== vector-solenoid ppo_diff code ==========
+RUN pip install tensorflow
+
 # ========== Misc ==========
 # Import user environment variable
 ARG user

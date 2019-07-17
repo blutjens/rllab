@@ -7,7 +7,6 @@ cd $PROJECT_PATH
 python setup.py install
 
 # TODO remove this sketchy sketcherness of installing vector-solenoid tasks and rewards
-pip install tensorflow
 cd $PROJECT_PATH/../../vector-solenoid-branch-del/vector-solenoid
 python setup.py install
 

@@ -10,7 +10,7 @@
     pole_friction = 0.000002
 
     # TODO: remove, I'm  overwrititng the action space either way in StandEnvVime
-    from rllab.envs.envs import constants
+    from solenoid.envs import constants
     ctrl_lim_low = float(constants.action_low)
     ctrl_lim_high = float(constants.action_high)
 
