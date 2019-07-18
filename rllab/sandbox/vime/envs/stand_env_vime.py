@@ -322,6 +322,8 @@ class StandEnvVime(Box2DEnv, Serializable):
 
     @overrides 
     def terminate(self):
+        print('env terminate called')
+        self.reset(height=0.75)
         self.close()
 
     #@overrides

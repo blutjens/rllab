@@ -245,8 +245,8 @@ class BatchPolopt(RLAlgorithm):
             plotter.init_plot(self.env, self.policy)
 
     def shutdown_worker(self, only_reset=False):
-        print('in shutdown')
-        parallel_sampler.terminate_task(scope=self.scope, only_reset=False)
+        print('in shutdown. only_res', only_reset)
+        parallel_sampler.terminate_task(scope=self.scope, only_reset=only_reset)
 
     def train(self):
         print('STARTING training')
@@ -302,9 +302,11 @@ class BatchPolopt(RLAlgorithm):
             logger.push_prefix('itr #%d | ' % itr)
 
             paths = self.obtain_samples(itr)
+            #print('calling shutdown after obt samples, there was itr:', itr)
+            #self.shutdown_worker(only_reset=True)
             samples_data = self.process_samples(itr, paths)
 
-            #self.shutdown_worker(only_reset=True)
+
 
             # Exploration code
             # ----------------
@@ -391,8 +393,8 @@ class BatchPolopt(RLAlgorithm):
                 if self.pause_for_plot:
                     raw_input("Plotting evaluation run: Press Enter to "
                               "continue...")
-        print('shutdown wokrer')
 
+        print('shutdown wokrer')
 
         self.shutdown_worker()
 
@@ -632,6 +634,9 @@ class BatchPolopt(RLAlgorithm):
                 paths=paths,
             )
 
+        #print('shutting down worker')
+        #logger.log('shutodown worker', True)
+        #self.shutdown_worker(only_reset=True)
         logger.log("fitting baseline...")
         self.baseline.fit(paths)
         logger.log("fitted")

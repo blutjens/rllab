@@ -16,6 +16,9 @@ import itertools
 from rllab.envs.envs.tasks import SineTask,ChirpTask,StepTask
 
 stub(globals())
+import atexit
+
+
 
 # Param ranges
 seeds = range(1)
@@ -31,6 +34,8 @@ param_cart_product = itertools.product(
 )
 
 for mdp, eta, seed in param_cart_product:
+    # Terminate env if task is closed from terminal (e.g., ctrl+c)
+    atexit.register(mdp.terminate())
 
     policy = GaussianMLPPolicy(
         env_spec=mdp.spec,
@@ -42,7 +47,7 @@ for mdp, eta, seed in param_cart_product:
     )
 
     plot = True
-    batch_size = 5000
+    batch_size = 1000
     algo = TRPO(
         env=mdp,
         policy=policy,
@@ -70,7 +75,7 @@ for mdp, eta, seed in param_cart_product:
         unn_learning_rate=0.0001,
         animated=False
     )
-    print('skrt')
+    # Run experiment lite is "pickled mode" which is necessary for parallelization
     run_experiment_lite(
         algo.train(),
         use_cloudpickle=True, # to pickle lambda reward fn
@@ -83,3 +88,4 @@ for mdp, eta, seed in param_cart_product:
         log_dir="data/logs_vime_stand_2",
         script="rllab/sandbox/vime/experiments/run_experiment_lite.py",
     )
+

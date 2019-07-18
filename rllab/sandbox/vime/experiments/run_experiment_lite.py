@@ -53,7 +53,7 @@ def run_experiment(argv):
     parser.add_argument('--seed', type=int,
                         help='Random seed for numpy')
     parser.add_argument('--use_cloudpickle', type=bool,
-                        help='TODO: delete this arg')
+                        help='Cloudpickle can store envs that contain lambda fn')
     parser.add_argument('--args_data', type=str,
                         help='Pickled data for stub objects')
 

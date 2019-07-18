@@ -28,12 +28,17 @@ def rollout(env, agent, max_path_length=np.inf, animated=False, speedup=1,
             break
         o = next_o
         if animated:
+            print('rendering env')
             env.render()
             timestep = 0.05
             time.sleep(timestep / speedup)
     if animated and not always_return_paths:
         return
 
+    # Reset environment at the end s.t. teststand doesn't collide.
+    print('Calling reset at the end of episode from rllab/sampler/utils.py')
+    env.reset()
+    
     return dict(
         observations=tensor_utils.stack_tensor_list(observations),
         actions=tensor_utils.stack_tensor_list(actions),
