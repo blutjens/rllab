@@ -32,11 +32,5 @@ src/
 .settings
 .pods
 docs/_build
-blackbox.zip
-blackbox
-rllab/config_personal.py
 *.swp
-
-
-*.egg
-*.egg-info/
+*.dat
