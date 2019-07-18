@@ -109,6 +109,7 @@ class BatchPolopt(RLAlgorithm):
             env,
             policy,
             baseline,
+            scope=None,
             n_itr=500,
             start_itr=0,
             batch_size=5000,
@@ -155,6 +156,8 @@ class BatchPolopt(RLAlgorithm):
         :param env: Environment
         :param policy: Policy
         :param baseline: Baseline
+        :param scope: Scope for identifying the algorithm. Must be specified if running multiple algorithms
+        simultaneously, each using different environments and policies
         :param n_itr: Number of iterations.
         :param start_itr: Starting iteration.
         :param batch_size: Number of samples per iteration.
@@ -174,6 +177,7 @@ class BatchPolopt(RLAlgorithm):
         self.env = env
         self.policy = policy
         self.baseline = baseline
+        self.scope = scope
         self.n_itr = n_itr
         self.start_itr = start_itr
         self.batch_size = batch_size
@@ -240,10 +244,12 @@ class BatchPolopt(RLAlgorithm):
         if self.plot:
             plotter.init_plot(self.env, self.policy)
 
-    def shutdown_worker(self):
-        pass
+    def shutdown_worker(self, only_reset=False):
+        print('in shutdown')
+        parallel_sampler.terminate_task(scope=self.scope, only_reset=False)
 
     def train(self):
+        print('STARTING training')
 
         # Bayesian neural network (BNN) initialization.
         # ------------------------------------------------
@@ -287,7 +293,7 @@ class BatchPolopt(RLAlgorithm):
                 action_dim=act_dim
             )
         # ------------------------------------------------
-
+        print('STARTING WORKER')
         self.start_worker()
         self.init_opt()
         episode_rewards = []
@@ -298,9 +304,13 @@ class BatchPolopt(RLAlgorithm):
             paths = self.obtain_samples(itr)
             samples_data = self.process_samples(itr, paths)
 
+            #self.shutdown_worker(only_reset=True)
+
             # Exploration code
             # ----------------
             if self.use_replay_pool:
+                print('adding samples')
+
                 # Fill replay pool.
                 logger.log("Fitting dynamics model using replay pool ...")
                 for path in samples_data['paths']:
@@ -312,6 +322,7 @@ class BatchPolopt(RLAlgorithm):
                         term = (i == path_len - 1)
                         self.pool.add_sample(obs, act, rew, term)
 
+                print('train dynamics')
                 # Now we train the dynamics model using the replay self.pool; only
                 # if self.pool is large enough.
                 if self.pool.size >= self.min_pool_size:
@@ -333,12 +344,15 @@ class BatchPolopt(RLAlgorithm):
                         _inputss.append(_inputs)
                         _targetss.append(_targets)
 
+
                     old_acc = 0.
                     for _inputs, _targets in zip(_inputss, _targetss):
                         _out = self.bnn.pred_fn(_inputs)
                         old_acc += np.mean(np.square(_out - _targets))
                     old_acc /= len(_inputss)
 
+        
+                    print('totally train dynamics')
                     for _inputs, _targets in zip(_inputss, _targetss):
                         self.bnn.train_fn(_inputs, _targets)
 
@@ -377,6 +391,8 @@ class BatchPolopt(RLAlgorithm):
                 if self.pause_for_plot:
                     raw_input("Plotting evaluation run: Press Enter to "
                               "continue...")
+        print('shutdown wokrer')
+
 
         self.shutdown_worker()
 

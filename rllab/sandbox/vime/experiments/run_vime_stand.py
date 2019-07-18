@@ -67,8 +67,8 @@ for mdp, eta, seed in param_cart_product:
         unn_n_hidden=[32],
         unn_layers_type=[1, 1],
         plot=plot,
-        unn_learning_rate=0.0001
-
+        unn_learning_rate=0.0001,
+        animated=False
     )
     print('skrt')
     run_experiment_lite(
@@ -80,6 +80,6 @@ for mdp, eta, seed in param_cart_product:
         seed=seed,
         plot=plot,
         mode="local",
-        log_dir="data/logs_vime_stand",
+        log_dir="data/logs_vime_stand_2",
         script="rllab/sandbox/vime/experiments/run_experiment_lite.py",
     )

@@ -41,6 +41,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         )
         # Whether to simulate in rllab dynamics or use physical test stand
         self.sim = sim
+        self.shutoff = False # Set this true to shutdown the test stand
         # Box2D params
         # self.obs_noise = 0 # Set to val, if additional observation noise desired
         # self.position_only = False # Set to True, if only position observation required
@@ -163,6 +164,7 @@ class StandEnvVime(Box2DEnv, Serializable):
 
     # ========== Write to test stand =============
     def _move_test_stand_to_init(self, height):
+        if self.shutoff: height = 0.75
         self._send_default_commands()
         #state = self._convert_state_dict_to_np_arr(copy.deepcopy(self._get_raw_obs_in_dict()))
         state = self.get_raw_obs()
@@ -180,6 +182,10 @@ class StandEnvVime(Box2DEnv, Serializable):
             action = np.dot(np.negative(self.K), np.array(state[:state_keys.index('Goal_Height')]))
             state, _, _, _ = self.step(action, verbose=False)
 
+        if self.shutoff:
+            self.terminate()
+            import sys
+            sys.exit()
     def _send_default_commands(self):
         """
         Send idle commands to test stand
@@ -285,7 +291,7 @@ class StandEnvVime(Box2DEnv, Serializable):
                      If False, reset to height specified by param height
         """
         print('RESET CALLED')
-        time.sleep(1)
+
         if not stay: # Reset test 
             self._move_test_stand_to_init(height)
         # TODO: why do I need another send default commands?

@@ -1,5 +1,5 @@
 from rllab.sampler.utils import rollout
-from rllab.sampler.stateful_pool import singleton_pool
+from rllab.sampler.stateful_pool import singleton_pool, SharedGlobal
 from rllab.misc import ext
 from rllab.misc import logger
 from rllab.misc import tensor_utils
@@ -20,6 +20,43 @@ def initialize(n_parallel):
     except NameError:
         singleton_pool.run_each(
             _worker_init, [(id,) for id in range(singleton_pool.n_parallel)])
+
+
+def _get_scoped_G(G, scope):
+    print('getting scoped')
+
+    if scope is None:
+        return G
+    if not hasattr(G, "scopes"):
+        G.scopes = dict()
+    if scope not in G.scopes:
+        G.scopes[scope] = SharedGlobal()
+        G.scopes[scope].worker_id = G.worker_id
+    return G.scopes[scope]
+
+def _worker_terminate_task(G, scope=None, only_reset=False):
+    print('tterminating TASK IN VIME')
+    G = _get_scoped_G(G, scope)
+    print('G', G)
+    print('only reset', only_reset)
+    if getattr(G, "env", None):
+        print('calling env term')
+        if only_reset:
+            G.env.reset()
+        else:
+            G.env.terminate()
+        G.env = None
+    if getattr(G, "policy", None):
+        print('terminating policy is not implemented')
+        pass
+
+def terminate_task(scope=None, only_reset=False):
+    print('terminahating')
+    singleton_pool.run_each(
+        _worker_terminate_task,
+        [(scope,)] * singleton_pool.n_parallel,
+        only_reset
+    )
 
 
 def _worker_populate_task(G, env, policy, dynamics):
@@ -61,9 +98,12 @@ def _worker_set_dynamics_params(G, params):
 
 def _worker_collect_one_path(G, max_path_length, itr, normalize_reward,
                              reward_mean, reward_std, kl_batch_size, n_itr_update, use_replay_pool,
-                             obs_mean, obs_std, act_mean, act_std, second_order_update):
+                             obs_mean, obs_std, act_mean, act_std, second_order_update, animated=False):
     # Path rollout.
-    path = rollout(G.env, G.policy, max_path_length)
+    path = rollout(G.env, G.policy, max_path_length, animated=animated)
+    # Take this out for non StandEnvs
+    #print('Resetting env from parallel_sampler_expl.py')
+    #G.env.reset()
 
     # Computing intrinsic rewards.
     # ----------------------------
@@ -146,7 +186,8 @@ def sample_paths(
         obs_std=None,
         act_mean=None,
         act_std=None,
-        second_order_update=None
+        second_order_update=None, 
+        animated=False
 ):
     """
     :param policy_params: parameters for the policy. This will be updated on each worker process
@@ -172,7 +213,7 @@ def sample_paths(
         _worker_collect_one_path,
         threshold=max_samples,
         args=(max_path_length, itr, normalize_reward, reward_mean,
-              reward_std, kl_batch_size, n_itr_update, use_replay_pool, obs_mean, obs_std, act_mean, act_std, second_order_update),
+              reward_std, kl_batch_size, n_itr_update, use_replay_pool, obs_mean, obs_std, act_mean, act_std, second_order_update, animated),
         show_prog_bar=True
     )
 

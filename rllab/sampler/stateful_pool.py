@@ -152,6 +152,7 @@ class StatefulPool(object):
                 count += inc
                 if show_prog_bar:
                     pbar.inc(inc)
+
             if show_prog_bar:
                 pbar.stop()
             return results

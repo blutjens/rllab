@@ -40,7 +40,7 @@ class Box2DEnv(Env):
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/cartpole.xml.mako"
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/double_pendulum.xml.mako"
             model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/mountain_car.xml.mako"
-            model_path = "/home/bjoern/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/stand_env.xml.mako"
+            model_path = "/home/bjoern.luetjens/Desktop/vector-solenoid/rllab/rllab/envs/box2d/models/stand_env.xml.mako"
 
             if model_path.endswith(".mako"):
                 with open(model_path) as template_file:
