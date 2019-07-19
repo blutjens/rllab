@@ -1,6 +1,9 @@
 import numpy as np
 import pygame
 from rllab.envs.box2d.parser import find_body
+import argparse
+import os
+os.environ["THEANO_FLAGS"] = "device=cpu"
 
 from rllab import spaces
 from rllab.core.serializable import Serializable
@@ -23,6 +26,7 @@ from solenoid.envs import constants
 from solenoid.misc import tasks
 from solenoid.misc.reward_fns import goal_bias
 
+
 class StandEnvVime(Box2DEnv, Serializable):
 
     @autoargs.inherit(Box2DEnv.__init__)
@@ -33,7 +37,7 @@ class StandEnvVime(Box2DEnv, Serializable):
                  reward_fn=goal_bias, # standEnv
                  timeout=0.02,
                  sim=False,
-                 beta=1., sigma=0.25, action_penalty=32, use_proxy=False,
+                 beta=1., sigma=0.05, action_penalty=4, use_proxy=False,
                  *args, **kwargs):
         super(StandEnvVime, self).__init__(
             self.model_path("stand_env.xml.mako"),
@@ -379,12 +383,11 @@ def main():
     parser.add_argument("--keyboard", action="store_true", help="Use keyboard as input")
     args = parser.parse_args()
 
-    reward = lambda state, action, next_state: reward_fn(state, action, next_state)
-    env = StandEnv(reward)
-    state = env.reset(height=0.65, stay=False)
+    env = StandEnvVime()
+    state = env.reset(height=0.45, stay=False)
     print(state)
-    _ = input("Enter")
-    while True:
+    #_ = input("Enter")
+    for _ in range(10):
         if args.keyboard:
             action = np.zeros(shape=1, dtype=np.float32)
             if keyboard.is_pressed("q"):
@@ -393,9 +396,11 @@ def main():
                 action[0] = -1.0
             action = action * 1200
         else:
-            action = env.action_space.sample()
+            #action = env.action_space.sample()
+            action = [900.0]
         state, _, _, _ = copy.deepcopy(env.step(action))
-
+        print('state', state[5:])
+    env.terminate()
 
 if __name__ == "__main__":
     main()

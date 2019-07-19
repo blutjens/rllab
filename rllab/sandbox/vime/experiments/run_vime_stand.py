@@ -45,7 +45,7 @@ for mdp, eta, seed in param_cart_product:
     baseline = LinearFeatureBaseline(
         mdp.spec,
     )
-
+    
     plot = True
     batch_size = 1000
     algo = TRPO(
