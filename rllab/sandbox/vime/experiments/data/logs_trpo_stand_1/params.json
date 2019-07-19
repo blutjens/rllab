@@ -1,0 +1,81 @@
+{
+  "args_data": "gASVXQMAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jA1zbWFsbF9uZWdfcmV3lIiMC3BhcnRpYWxfb2JzlIwIZXJyX29ubHmUjAt0X2xvb2thaGVhZJRLAIwGdF9wYXN0lEsAjAppbml0X3dfbHF0lImMD2VsaW1fZGVhZF9iYW5kc5SJdYwLcHJveHlfY2xhc3OUjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gcjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEsCSwKGlHVoHIwicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGgnaCkpgZR9lChoLGgOaC1oLnVic2gcjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRN0AeMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylEtkjAlzdGVwX3NpemWURz+EeuFHrhR7jBBzdWJzYW1wbGVfZmFjdG9ylEc/8AAAAAAAAIwEcGxvdJSJdWgcjBBybGxhYi5hbGdvcy50cnBvlIwEVFJQT5STlHVijAV0cmFpbpQpfZR0lIwIX19rd2FyZ3OUfZR1Yi4=",
+  "exp_name": "trpo_2019_07_19_21_19_44_0001",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.algos.trpo.TRPO",
+      "batch_size": 2000,
+      "max_path_length": 500,
+      "n_itr": 100,
+      "plot": false,
+      "step_size": 0.01,
+      "subsample_factor": 1.0,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "elim_dead_bands": false,
+            "init_w_lqt": false,
+            "partial_obs": "err_only",
+            "small_neg_rew": true,
+            "t_lookahead": 0,
+            "t_past": 0,
+            "timeout": 0.02
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+        "elim_dead_bands": false,
+        "init_w_lqt": false,
+        "partial_obs": "err_only",
+        "small_neg_rew": true,
+        "t_lookahead": 0,
+        "t_past": 0,
+        "timeout": 0.02
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "elim_dead_bands": false,
+            "init_w_lqt": false,
+            "partial_obs": "err_only",
+            "small_neg_rew": true,
+            "t_lookahead": 0,
+            "t_past": 0,
+            "timeout": 0.02
+          }
+        }
+      },
+      "hidden_sizes": [
+        2,
+        2
+      ]
+    }
+  },
+  "log_dir": "data/logs_trpo_stand_1",
+  "log_tabular_only": false,
+  "n_parallel": 1,
+  "params_log_file": "params.json",
+  "plot": false,
+  "seed": 0,
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}

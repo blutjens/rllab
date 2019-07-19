@@ -261,18 +261,20 @@ class ConjugateGradientOptimizer(Serializable):
             2.0 * self._max_constraint_val *
             (1. / (descent_direction.dot(Hx(descent_direction)) + 1e-8))
         )
+        print('descent_direction / init step sz', descent_direction, initial_step_size)
         if np.isnan(initial_step_size):
             initial_step_size = 1.
         flat_descent_step = initial_step_size * descent_direction
-
         logger.log("descent direction computed")
 
         prev_param = np.copy(self._target.get_param_values(trainable=True))
+        print('prev_param', prev_param)
         n_iter = 0
         for n_iter, ratio in enumerate(self._backtrack_ratio ** np.arange(self._max_backtracks)):
             cur_step = ratio * flat_descent_step
             cur_param = prev_param - cur_step
             self._target.set_param_values(cur_param, trainable=True)
+            print('set new param / ratio / flat descn st', cur_param, ratio, flat_descent_step)
             loss, constraint_val = sliced_fun(
                 self._opt_fun["f_loss_constraint"], self._num_slices)(inputs, extra_inputs)
             if loss < loss_before and constraint_val <= self._max_constraint_val:

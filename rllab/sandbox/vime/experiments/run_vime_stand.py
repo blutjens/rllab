@@ -13,7 +13,8 @@ from rllab.sandbox.vime.algos.trpo_expl import TRPO
 from rllab.misc.instrument import stub, run_experiment_lite
 import itertools
 
-from rllab.envs.envs.tasks import SineTask,ChirpTask,StepTask
+#from rllab.envs.envs.tasks import SineTask,ChirpTask,StepTask
+from solenoid.misc.tasks import SineTask,ChirpTask,StepTask
 
 stub(globals())
 import atexit
@@ -36,7 +37,7 @@ param_cart_product = itertools.product(
 for i in range(10):
     for mdp, eta, seed in param_cart_product:
         # Terminate env if task is closed from terminal (e.g., ctrl+c)
-        atexit.register(mdp.terminate())
+        atexit.register(mdp.wrapped_env.terminate())
 
         policy = GaussianMLPPolicy(
             env_spec=mdp.spec,

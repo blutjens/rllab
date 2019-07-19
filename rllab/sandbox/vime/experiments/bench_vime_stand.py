@@ -20,7 +20,7 @@ from solenoid.misc.tasks import SineTask,ChirpTask,StepTask#,ToZeroTask
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', type=str, default='data/logs_vime_stand/itr_54.pkl',
+    parser.add_argument('--model', type=str, default='logs_vime_stand/itr_54',
                         help='path to the snapshot file')
     parser.add_argument('--max_path_length', type=int, default=500,
                         help='Max length of rollout')
@@ -30,12 +30,13 @@ if __name__ == "__main__":
                         help='plot and print results')
     args = parser.parse_args()
 
-    # If the snapshot file use tensorflow, do:
+    model_file = 'data/' + args.model + '.pkl'
+    # If the snapshot model_file use tensorflow, do:
     # import tensorflow as tf
     # with tf.Session():
     #     [rest of the code]
     with tf.Session() as sess:
-        data = joblib.load(args.file)
+        data = joblib.load(model_file)
         policy = data['policy']
         env = data['env']
 
@@ -61,7 +62,8 @@ if __name__ == "__main__":
             print('rew', np.sum(np.array(rewards)))
             # Get env params
             time_steps = np.arange(state['Height'].shape[0])
-            print('ts', time_steps)
+            print('ts', time_steps.shape)
+            print('rew', rewards.shape)
             timeout = env.wrapped_env.timestep
             # Plot tracking results and compute score for chosen metric
             if plot_mult_tst_params:
@@ -75,7 +77,6 @@ if __name__ == "__main__":
                 ax[2*p_i + 2].plot(time_steps, rewards, '-', label="actions applied")
                 ax[2*p_i + 2].set_ylabel('$R$ ')
                 ax[2*p_i + 2].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-
             else:
                 fig, ax = plt.subplots(nrows=2, ncols=1)
                 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
             #plt.savefig(control + str(round(time.time())) + ".png")
             if(args.display):
                 #plt.show() 
-                plt.savefig('plots/tst.png')
+                plt.savefig('plots/' + args.model + '.png')
 
             #if not query_yes_no('Continue simulation?'):
             #    break
