@@ -16,7 +16,7 @@ import ast
 import uuid
 import pickle#cPickle as pickle
 import base64
-
+import joblib # to resume from ckpoint
 
 def run_experiment(argv):
 
@@ -56,6 +56,10 @@ def run_experiment(argv):
                         help='Cloudpickle can store envs that contain lambda fn')
     parser.add_argument('--args_data', type=str,
                         help='Pickled data for stub objects')
+    # BRT + vime
+    parser.add_argument('--resume_from', type=str, default=None,
+                    help='Name of the pickle file to resume experiment from.')
+
 
     args = parser.parse_args(argv[1:])
 
@@ -90,10 +94,34 @@ def run_experiment(argv):
     logger.set_log_tabular_only(args.log_tabular_only)
     logger.push_prefix("[%s] " % args.exp_name)
 
-    maybe_iter = concretize(data)
-    if is_iterable(maybe_iter):
-        for _ in maybe_iter:
-            pass
+    # To allow resuming from ckpoint
+    if args.resume_from is not None:
+        data = joblib.load(args.resume_from)
+        assert 'algo' in data
+        algo = data['algo']
+        algo.train()
+    else:
+        # read from stdin
+        #if args.use_cloudpickle:
+        #    import cloudpickle
+        #    method_call = cloudpickle.loads(base64.b64decode(args.args_data))
+        #    method_call(variant_data)
+        #else:
+        maybe_iter = concretize(data)
+        if is_iterable(maybe_iter):
+            for _ in maybe_iter:
+                pass
+
+            #data = pickle.loads(base64.b64decode(args.args_data))
+            #maybe_iter = concretize(data)
+            #if is_iterable(maybe_iter):
+            #    for _ in maybe_iter:
+            #        pass
+
+    #maybe_iter = concretize(data)
+    #if is_iterable(maybe_iter):
+    #    for _ in maybe_iter:
+    #        pass
 
     logger.set_snapshot_mode(prev_mode)
     logger.set_snapshot_dir(prev_snapshot_dir)

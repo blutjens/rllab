@@ -171,7 +171,7 @@ class StandEnvVime(Box2DEnv, Serializable):
             state[state_keys.index('Goal_Velocity')] = 0.
 
         # Error
-        state[state_keys.index('Err')] = state[state_keys.index('Goal_Height')] - state[state_keys.index('Height')]
+        if 'Err' in state_keys: state[state_keys.index('Err')] = state[state_keys.index('Goal_Height')] - state[state_keys.index('Height')]
 
         # write state to visualization
         if self.vis: self._write_state_to_vis(copy.deepcopy(state)) # Copies the initial state to the Box2D visualization 

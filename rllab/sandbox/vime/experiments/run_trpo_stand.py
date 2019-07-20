@@ -30,8 +30,8 @@ seeds = range(1)
 timeout = 0.02
 
 # Params for testing 
-small_neg_rew=True
-partial_obs = 'err_only' #'height_only', None
+small_neg_rew=False
+partial_obs = None#'err_only' #'height_only', None
 t_lookahead=0
 t_past=0
 init_w_lqt=False
@@ -58,11 +58,7 @@ param_cart_product = itertools.product(
 
 for mdp, seed in param_cart_product:
     # Terminate env if task is closed from terminal (e.g., ctrl+c)
-    #print('mdp', mdp.wrapped_env.terminate())
-    #mdp.terminate()
-    #mdp.wrapped_env.terminate()
-    #import sys
-    #sys.exit()
+    # TODO this does not work!!
     atexit.register(mdp.wrapped_env.terminate())
 
     policy = GaussianMLPPolicy(

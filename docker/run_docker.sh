@@ -12,6 +12,7 @@
 } || {  catch
   # Remove running instance and try again
   docker rm rllab
+  #docker kill rllab
 
   NV_GPU=0 docker run -it \
   -e DISPLAY=unix$DISPLAY \

@@ -1,6 +1,6 @@
 {
-  "args_data": "gASVXQMAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jA1zbWFsbF9uZWdfcmV3lIiMC3BhcnRpYWxfb2JzlIwIZXJyX29ubHmUjAt0X2xvb2thaGVhZJRLAIwGdF9wYXN0lEsAjAppbml0X3dfbHF0lImMD2VsaW1fZGVhZF9iYW5kc5SJdYwLcHJveHlfY2xhc3OUjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gcjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEsCSwKGlHVoHIwicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGgnaCkpgZR9lChoLGgOaC1oLnVic2gcjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRN0AeMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylEtkjAlzdGVwX3NpemWURz+EeuFHrhR7jBBzdWJzYW1wbGVfZmFjdG9ylEc/8AAAAAAAAIwEcGxvdJSJdWgcjBBybGxhYi5hbGdvcy50cnBvlIwEVFJQT5STlHVijAV0cmFpbpQpfZR0lIwIX19rd2FyZ3OUfZR1Yi4=",
-  "exp_name": "trpo_2019_07_19_21_19_44_0001",
+  "args_data": "gASVUwMAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jA1zbWFsbF9uZWdfcmV3lImMC3BhcnRpYWxfb2JzlE6MC3RfbG9va2FoZWFklEsAjAZ0X3Bhc3SUSwCMCmluaXRfd19scXSUiYwPZWxpbV9kZWFkX2JhbmRzlIl1jAtwcm94eV9jbGFzc5SMJnJsbGFiLnNhbmRib3gudmltZS5lbnZzLnN0YW5kX2Vudl92aW1llIwMU3RhbmRFbnZWaW1llJOUdWJzaBuMGXJsbGFiLmVudnMubm9ybWFsaXplZF9lbnaUjA1Ob3JtYWxpemVkRW52lJOUdWKMBnBvbGljeZRoBymBlH2UKGgKKWgLfZQojAhlbnZfc3BlY5RoAIwIU3R1YkF0dHKUk5QpgZR9lCiMBF9vYmqUaA6MCl9hdHRyX25hbWWUjARzcGVjlHVijAxoaWRkZW5fc2l6ZXOUS0BLIIaUdWgbjCJybGxhYi5wb2xpY2llcy5nYXVzc2lhbl9tbHBfcG9saWN5lIwRR2F1c3NpYW5NTFBQb2xpY3mUk5R1YowIYmFzZWxpbmWUaAcpgZR9lChoCiloC32UaCZoKCmBlH2UKGgraA5oLGgtdWJzaBuMJ3JsbGFiLmJhc2VsaW5lcy5saW5lYXJfZmVhdHVyZV9iYXNlbGluZZSMFUxpbmVhckZlYXR1cmVCYXNlbGluZZSTlHVijApiYXRjaF9zaXpllE3QB4wLd2hvbGVfcGF0aHOUiIwPbWF4X3BhdGhfbGVuZ3RolE30AYwFbl9pdHKUS2SMCXN0ZXBfc2l6ZZRHP4R64UeuFHuMEHN1YnNhbXBsZV9mYWN0b3KURz/wAAAAAAAAjARwbG90lIl1aBuMEHJsbGFiLmFsZ29zLnRycG+UjARUUlBPlJOUdWKMBXRyYWlulCl9lHSUjAhfX2t3YXJnc5R9lHViLg==",
+  "exp_name": "trpo_2019_07_20_00_09_27_0001",
   "json_args": {
     "algo": {
       "_name": "rllab.algos.trpo.TRPO",
@@ -22,8 +22,8 @@
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "elim_dead_bands": false,
             "init_w_lqt": false,
-            "partial_obs": "err_only",
-            "small_neg_rew": true,
+            "partial_obs": null,
+            "small_neg_rew": false,
             "t_lookahead": 0,
             "t_past": 0,
             "timeout": 0.02
@@ -37,8 +37,8 @@
         "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
         "elim_dead_bands": false,
         "init_w_lqt": false,
-        "partial_obs": "err_only",
-        "small_neg_rew": true,
+        "partial_obs": null,
+        "small_neg_rew": false,
         "t_lookahead": 0,
         "t_past": 0,
         "timeout": 0.02
@@ -54,8 +54,8 @@
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "elim_dead_bands": false,
             "init_w_lqt": false,
-            "partial_obs": "err_only",
-            "small_neg_rew": true,
+            "partial_obs": null,
+            "small_neg_rew": false,
             "t_lookahead": 0,
             "t_past": 0,
             "timeout": 0.02
@@ -63,8 +63,8 @@
         }
       },
       "hidden_sizes": [
-        2,
-        2
+        64,
+        32
       ]
     }
   },
