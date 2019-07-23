@@ -1,0 +1,84 @@
+{
+  "args_data": "gASVNQQAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lIwHdGltZW91dJRHP5R64UeuFHtzjAtwcm94eV9jbGFzc5SMJnJsbGFiLnNhbmRib3gudmltZS5lbnZzLnN0YW5kX2Vudl92aW1llIwMU3RhbmRFbnZWaW1llJOUdWJzaBWMGXJsbGFiLmVudnMubm9ybWFsaXplZF9lbnaUjA1Ob3JtYWxpemVkRW52lJOUdWKMBnBvbGljeZRoBymBlH2UKGgKKWgLfZQojAhlbnZfc3BlY5RoAIwIU3R1YkF0dHKUk5QpgZR9lCiMBF9vYmqUaA6MCl9hdHRyX25hbWWUjARzcGVjlHVijAxoaWRkZW5fc2l6ZXOUS0BLIIaUdWgVjCJybGxhYi5wb2xpY2llcy5nYXVzc2lhbl9tbHBfcG9saWN5lIwRR2F1c3NpYW5NTFBQb2xpY3mUk5R1YowIYmFzZWxpbmWUaAcpgZR9lChoCiloC32UaCBoIimBlH2UKGglaA5oJmgndWJzaBWMJ3JsbGFiLmJhc2VsaW5lcy5saW5lYXJfZmVhdHVyZV9iYXNlbGluZZSMFUxpbmVhckZlYXR1cmVCYXNlbGluZZSTlHVijApiYXRjaF9zaXpllE2IE4wLd2hvbGVfcGF0aHOUiIwPbWF4X3BhdGhfbGVuZ3RolE30AYwFbl9pdHKUSy2MCXN0ZXBfc2l6ZZRHP4R64UeuFHuMA2V0YZRHPxo24uscQy2MDXNubl9uX3NhbXBsZXOUSwqMEHN1YnNhbXBsZV9mYWN0b3KURz/wAAAAAAAAjA91c2VfcmVwbGF5X3Bvb2yUiIwMdXNlX2tsX3JhdGlvlIiMDnVzZV9rbF9yYXRpb19xlIiMDG5faXRyX3VwZGF0ZZRLAYwNa2xfYmF0Y2hfc2l6ZZRLAYwQbm9ybWFsaXplX3Jld2FyZJSJjBByZXBsYXlfcG9vbF9zaXpllEpAQg8AjBRuX3VwZGF0ZXNfcGVyX3NhbXBsZZRNiBOME3NlY29uZF9vcmRlcl91cGRhdGWUiIwMdW5uX25faGlkZGVulF2USyBhjA91bm5fbGF5ZXJzX3R5cGWUXZQoSwFLAWWMBHBsb3SUiYwRdW5uX2xlYXJuaW5nX3JhdGWURz8aNuLrHEMtjAhhbmltYXRlZJSJdWgVjCJybGxhYi5zYW5kYm94LnZpbWUuYWxnb3MudHJwb19leHBslIwEVFJQT5STlHVijAV0cmFpbpQpfZR0lIwIX19rd2FyZ3OUfZR1Yi4=",
+  "exp_name": "vime-stand_2019_07_19_06_12_45_0001",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.sandbox.vime.algos.trpo_expl.TRPO",
+      "animated": false,
+      "batch_size": 5000,
+      "eta": 0.0001,
+      "kl_batch_size": 1,
+      "max_path_length": 500,
+      "n_itr": 45,
+      "n_itr_update": 1,
+      "n_updates_per_sample": 5000,
+      "normalize_reward": false,
+      "plot": false,
+      "replay_pool_size": 1000000,
+      "second_order_update": true,
+      "snn_n_samples": 10,
+      "step_size": 0.01,
+      "subsample_factor": 1.0,
+      "unn_layers_type": [
+        1,
+        1
+      ],
+      "unn_learning_rate": 0.0001,
+      "unn_n_hidden": [
+        32
+      ],
+      "use_kl_ratio": true,
+      "use_kl_ratio_q": true,
+      "use_replay_pool": true,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "timeout": 0.02
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+        "timeout": 0.02
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "timeout": 0.02
+          }
+        }
+      },
+      "hidden_sizes": [
+        64,
+        32
+      ]
+    }
+  },
+  "log_dir": "data/logs_vime_stand_4_0_res",
+  "log_tabular_only": false,
+  "n_parallel": 1,
+  "params_log_file": "params.json",
+  "plot": false,
+  "resume_from": "data/logs_vime_stand_4_0/itr_44.pkl",
+  "seed": 0,
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}
