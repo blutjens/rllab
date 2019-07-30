@@ -243,9 +243,12 @@ rllab/sandbox/vime/envs/double_pendulum_env_x.py
 rllab/sandbox/vime/envs/half_cheetah_env_x.py
 rllab/sandbox/vime/envs/mountain_car_env_x.py
 rllab/sandbox/vime/envs/stand_env_vime.py
+rllab/sandbox/vime/envs/test_stand.py
 rllab/sandbox/vime/experiments/__init__.py
 rllab/sandbox/vime/experiments/bench_vime_stand.py
+rllab/sandbox/vime/experiments/resume_vime_stand.py
 rllab/sandbox/vime/experiments/run_experiment_lite.py
+rllab/sandbox/vime/experiments/run_sac_stand.py
 rllab/sandbox/vime/experiments/run_trpo.py
 rllab/sandbox/vime/experiments/run_trpo_expl.py
 rllab/sandbox/vime/experiments/run_trpo_stand.py

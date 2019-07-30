@@ -21,7 +21,8 @@
     --name rllab \
     -p 8888:8888 -p 6006:6006 \
     -v /home/$USER/:/home/$USER \
-    --device=/dev/serial/by-id/usb-FTDI_FT231X_USB_UART_DO00FZYH-if00-port0 \
+    -v /dev/serial:/dev/serial \
+    #--device=/dev/serial/by-id/usb-FTDI_FT231X_USB_UART_DO00FZYH-if00-port0 \
     lutjens/rllab:v0
   } || { catch # Don't forward serial, if physical teststand is not available
       docker rm rllab

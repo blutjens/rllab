@@ -152,14 +152,16 @@ RUN pip install joblib \
 
 RUN pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip # (https://github.com/aigamedev/scikit-neuralnetwork/issues/235)
 
-# ========== GUI access ==========
-RUN apt-get -y install iputils-ping eog nano  
 
 # ========== Test stand env ==========
 RUN pip install pyfirmata
 
 # ========== vector-solenoid ppo_diff code ==========
 RUN pip install tensorflow
+
+# ========== GUI access ==========
+RUN apt-get -y install iputils-ping eog nano  
+RUN apt-get -y install python3.6-tk # For matplotlib
 
 # ========== Misc ==========
 # Import user environment variable
