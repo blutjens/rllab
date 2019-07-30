@@ -20,6 +20,7 @@ import joblib # to resume from ckpoint
 
 def run_experiment(argv):
 
+
     default_log_dir = config.LOG_DIR
     now = datetime.datetime.now(dateutil.tz.tzlocal())
 
@@ -59,9 +60,16 @@ def run_experiment(argv):
     # BRT + vime
     parser.add_argument('--resume_from', type=str, default=None,
                     help='Name of the pickle file to resume experiment from.')
-
+    parser.add_argument('--sim', type=str, default="sim",
+                        choices=['sim','sim_physics','real'], help='Name of teststand to run on')
 
     args = parser.parse_args(argv[1:])
+
+    if args.sim=="sim":
+        # Only necessary for simulation
+        import tensorflow as tf 
+        tf.enable_eager_execution()
+        print('In tf eager mode to run test stand forward dynamics simulation:', tf.executing_eagerly())
 
     from rllab.sandbox.vime.sampler import parallel_sampler_expl as parallel_sampler
     parallel_sampler.initialize(n_parallel=args.n_parallel)

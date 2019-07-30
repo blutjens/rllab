@@ -1,0 +1,100 @@
+{
+  "args_data": "gASViAQAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjAtzaW1fcGh5c2ljc5SMA3Zpc5SJjAd2ZXJib3NllImMCWRlYWRfYmFuZJRHQIEwAAAAAACMCm1heF9hY3Rpb26UR0CMIAAAAAAAdYwLcHJveHlfY2xhc3OUjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gbjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoG4wicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGgmaCgpgZR9lChoK2gOaCxoLXVic2gbjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylE3QB4wJc3RlcF9zaXpllEc/hHrhR64Ue4wDZXRhlEc/Gjbi6xxDLYwNc25uX25fc2FtcGxlc5RLCowQc3Vic2FtcGxlX2ZhY3RvcpRHP/AAAAAAAACMD3VzZV9yZXBsYXlfcG9vbJSIjAx1c2Vfa2xfcmF0aW+UiIwOdXNlX2tsX3JhdGlvX3GUiIwMbl9pdHJfdXBkYXRllEsBjA1rbF9iYXRjaF9zaXpllEsBjBBub3JtYWxpemVfcmV3YXJklImMEHJlcGxheV9wb29sX3NpemWUSkBCDwCMFG5fdXBkYXRlc19wZXJfc2FtcGxllE2IE4wTc2Vjb25kX29yZGVyX3VwZGF0ZZSIjAx1bm5fbl9oaWRkZW6UXZRLIGGMD3Vubl9sYXllcnNfdHlwZZRdlChLAUsBZYwEcGxvdJSJjBF1bm5fbGVhcm5pbmdfcmF0ZZRHPxo24uscQy2MCGFuaW1hdGVklIl1aBuMInJsbGFiLnNhbmRib3gudmltZS5hbGdvcy50cnBvX2V4cGyUjARUUlBPlJOUdWKMBXRyYWlulCl9lHSUjAhfX2t3YXJnc5R9lHViLg==",
+  "exp_name": "vime-stand_2019_07_29_22_27_27_0001",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.sandbox.vime.algos.trpo_expl.TRPO",
+      "animated": false,
+      "batch_size": 5000,
+      "eta": 0.0001,
+      "kl_batch_size": 1,
+      "max_path_length": 500,
+      "n_itr": 2000,
+      "n_itr_update": 1,
+      "n_updates_per_sample": 5000,
+      "normalize_reward": false,
+      "plot": false,
+      "replay_pool_size": 1000000,
+      "second_order_update": true,
+      "snn_n_samples": 10,
+      "step_size": 0.01,
+      "subsample_factor": 1.0,
+      "unn_layers_type": [
+        1,
+        1
+      ],
+      "unn_learning_rate": 0.0001,
+      "unn_n_hidden": [
+        32
+      ],
+      "use_kl_ratio": true,
+      "use_kl_ratio_q": true,
+      "use_replay_pool": true,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "dead_band": 550.0,
+            "max_action": 900.0,
+            "sim": "sim_physics",
+            "timeout": 0.02,
+            "verbose": false,
+            "vis": false
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+        "dead_band": 550.0,
+        "max_action": 900.0,
+        "sim": "sim_physics",
+        "timeout": 0.02,
+        "verbose": false,
+        "vis": false
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "dead_band": 550.0,
+            "max_action": 900.0,
+            "sim": "sim_physics",
+            "timeout": 0.02,
+            "verbose": false,
+            "vis": false
+          }
+        }
+      },
+      "hidden_sizes": [
+        64,
+        32
+      ]
+    }
+  },
+  "log_dir": "data/logs_vime_sim_physics_st_sz_0.010_sd_0_db_550_max_900",
+  "log_tabular_only": false,
+  "n_parallel": 1,
+  "params_log_file": "params.json",
+  "plot": false,
+  "resume_from": null,
+  "seed": 0,
+  "sim": "sim_physics",
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}

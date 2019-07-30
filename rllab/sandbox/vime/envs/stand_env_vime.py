@@ -4,6 +4,11 @@ from rllab.envs.box2d.parser import find_body
 import argparse
 import os
 os.environ["THEANO_FLAGS"] = "device=cpu"
+import matplotlib.pyplot as plt
+
+# Standenv
+import time 
+import copy
 
 from rllab import spaces
 from rllab.core.serializable import Serializable
@@ -11,21 +16,12 @@ from rllab.envs.box2d.box2d_env import Box2DEnv
 from rllab.misc import autoargs
 from rllab.misc.overrides import overrides
 
-# Standenv
-import shlex
-import subprocess
-import time 
-import copy
-import warnings
-
-from solenoid.envs.stand_bridge import StandBridge
-from solenoid.envs.proxy_stand_bridge import ProxyStandBridge
-
 from solenoid.envs.constants import state_keys
 from solenoid.envs import constants
 from solenoid.misc import tasks
 from solenoid.misc.reward_fns import goal_bias
 
+from rllab.sandbox.vime.envs.test_stand import TestStandSim, TestStandSimPhysics, TestStandReal
 
 class StandEnvVime(Box2DEnv, Serializable):
 
@@ -38,21 +34,28 @@ class StandEnvVime(Box2DEnv, Serializable):
                  reward_fn=goal_bias, 
                  timeout=0.02,
                  vis=False,
+                 sim=False,
                  beta=1., sigma=0.05, action_penalty=4, use_proxy=False,
                  small_neg_rew=False,
                  partial_obs=None,
                  t_lookahead=0,
                  t_past=0,
                  init_w_lqt=False,
-                 elim_dead_bands=False,
+                 dead_band=0.,
+                 max_action=None,
+                 verbose=True,
                  *args, **kwargs):
         super(StandEnvVime, self).__init__(
             self.model_path("stand_env.xml.mako"),
             *args, **kwargs
         )
-        # Whether to visualize in rllab env or use physical test stand
-        self.vis = vis
+        #print('in eager mode at standenv init', tf.executing_eagerly())
+        #tf.enable_eager_execution()
+
+        self.vis = vis # if true, visualize in rllab env 
         self.shutoff = False # Set this true to shutdown the test stand
+        self.verbose = verbose # if true, print logs
+
         # Box2D params
         # self.obs_noise = 0 # Set to val, if additional observation noise desired
         # self.position_only = False # Set to True, if only position observation required
@@ -70,14 +73,15 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.t_lookahead = t_lookahead # Set obs to [height_t, goal_height_t+1, ..., goal_height_t+t_lookahead] 
         self.t_past = t_past # Set obs to [height_t-t_past, ..., height_t, goal_height]
         self.init_w_lqt = init_w_lqt # Set actions to: u = LQT(x) + RL(x)
-        self.elim_dead_bands = elim_dead_bands # Scale action space to {[-max_ma, -dead_b],[dead_b, max_ma]}
+        self.dead_band = dead_band # Scale action space to {[-max_ma, -dead_b],[dead_b, max_ma]}
+        self.max_action = max_action
 
         # Define partial observation 
         if self.partial_obs=='height_only':# Set obs to [height_t, goal_height] 
             self.obs_state_ids = [state_keys.index('Height'),state_keys.index('Goal_Height')]
         elif self.partial_obs=='err_only':# Set obs to [goal_height - height_t]
             self.obs_state_ids = [state_keys.index('Err')]
-        else:
+        else: # TODO only take in state until goal height!
             self.obs_state_ids = range(len(state_keys))
 
         # StandEnv
@@ -85,47 +89,35 @@ class StandEnvVime(Box2DEnv, Serializable):
             task = tasks.SineTask(
                 steps=500, periods=2., offset=0.)
 
+        # Define goal/reward fn
         self.task = task
         self.reward_fn = reward_fn
         self.beta = beta
         self.sigma = sigma
         self.action_penalty = action_penalty
 
-        self.timestep = timeout # overwrites box2D timestep
-        self._use_proxy = use_proxy
-
         # Keep track of timestep.
         self.t = 0
+        self.timestep = timeout # overwrites box2D timestep
 
-        # TODO Check if 1e6 is high enough as limit for state high and low boundaries (set in Box2D as global variable)
-        #print('act and obs space:', self.action_space, self.observation_space)
-
-        if use_proxy:
-            self._bridge = ProxyStandBridge()
-        else:
-            # Create Bridge to physical test stand
-            find_usbid_cmd = shlex.split("ls /dev/serial/by-id/")
-            usb_id = "/dev/serial/by-id/" + subprocess.check_output(find_usbid_cmd).decode()
-            usb_id = usb_id[0:-1]
-            self._bridge = StandBridge(port=usb_id)
-
-        self._prev_time = time.time()
+        # Init test stand
+        self.sim = sim # if true step in forward dyn simulation; if false step on physical test stand
+        if self.sim=="sim":
+            self.test_stand = TestStandSim(env=self)
+        elif self.sim=="sim_physics":
+            self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep)
+        elif self.sim=="real":
+            self.test_stand = TestStandReal(env=self, use_proxy=use_proxy)
+        
+        self._prev_time = time.time() # Used to maintain fixed rate of action commands on physical test stand
         self._prev_state = None
-
-        # LQR control for reset to a Prespecified Height
-        self.K = constants.K
 
         # Init Box2D serializable
         Serializable.quick_init(self, locals())
 
-
-    # ======== Read from test stand ==============
+    # ======== Process state reading from test stand ==============
     def _convert_state_dict_to_np_arr(self, state_dict):
         return np.array([state_dict[key] for key in state_keys], dtype=np.float32)
-        #state_list = []
-        #for key in range(len(constants.state_keys)):
-        #    state_list.append(state_dict[constants.state_keys[key]])
-        #return np.array(state_list)
 
     def _get_height_rate(self, state):
         if self._prev_state is not None:
@@ -141,34 +133,24 @@ class StandEnvVime(Box2DEnv, Serializable):
         Get raw/full observation from test stand, as defined in constants.state_keys
         Raw obs is used to move test stand to init position
         """
-        state = copy.deepcopy(self._bridge.read_state()) # returns a dict
-        #print('got raw state', state)
-        state['Height_Rate'] = state['Goal_Height'] = state['Goal_Velocity'] = state['Prev_Action'] = state['Prev_Reward'] = state['Err'] = 0.
-        state = self._convert_state_dict_to_np_arr(state)#np.array([state[key] for key in state_keys], dtype=np.float32)
-        #print('calc raw + goal state', state)
+        # Get state from Test stand
+        state = copy.deepcopy(self.test_stand.read_state()) # returns a dict
 
-        #print('test if height raet in state key', state_keys)
-        #print('test if height raet in state key', True if 'Height_Rate' in state_keys else False)
+        state['Height_Rate'] = state['Goal_Height'] = state['Goal_Velocity'] = state['Prev_Action'] = state['Prev_Reward'] #= state['Err'] = 0.
+        state = self._convert_state_dict_to_np_arr(state)
+
         if 'Height_Rate' in state_keys: state = self._get_height_rate(state)  
-        #print('converted into height rate', state)
 
-        # Convert stand env dict representation into rllab list
-        # self._cached_obs = state#self._convert_state_dict_to_np_arr(state)
-
-        # Iterate timestep counter
-        self.t += 1
-        #print('self.t', self.t)
 
         # Goal
-        # TODO eval if self.t or self.t+1
         self.goal_state = self.task(t=self.t + 1)
         state[state_keys.index('Goal_Height')] = self.goal_state
 
         # Goal velocity
-        if self._prev_state is not None:
-            state[state_keys.index('Goal_Velocity')] = state[state_keys.index('Goal_Height')] - self._prev_state[state_keys.index('Goal_Height')]
-        else:
-            state[state_keys.index('Goal_Velocity')] = 0.
+        #if self._prev_state is not None:
+        state[state_keys.index('Goal_Velocity')] = state[state_keys.index('Goal_Height')] - self.task(t=self.t)#self._prev_state[state_keys.index('Goal_Height')]
+        #else:
+        #    state[state_keys.index('Goal_Velocity')] = 0.
 
         # Error
         if 'Err' in state_keys: state[state_keys.index('Err')] = state[state_keys.index('Goal_Height')] - state[state_keys.index('Height')]
@@ -176,8 +158,13 @@ class StandEnvVime(Box2DEnv, Serializable):
         # write state to visualization
         if self.vis: self._write_state_to_vis(copy.deepcopy(state)) # Copies the initial state to the Box2D visualization 
 
-        # TODO see if i can delete prev_state, prev_time ...
+        # Making sure that prev state contains goal from one step before, s.t. reward function penalizes correct height, goal pairs
         self._prev_state = copy.deepcopy(state)
+        self._prev_state[state_keys.index('Goal_Height')] = self.task(t=self.t)
+
+        # Iterate timestep counter
+        self.t += 1
+
         #self._prev_time = time.time()
         return copy.deepcopy(state)
 
@@ -194,7 +181,6 @@ class StandEnvVime(Box2DEnv, Serializable):
             state = np.array(state[self.obs_state_ids])
         return state
 
-
     # ========== Write to visualization =============
     def _write_state_to_vis(self, state=None):
         """
@@ -204,14 +190,14 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         s = []
         for body in self.world.bodies:
-            print('body user data', body.userData)
-            if body.userData["name"]=="weights" and not self.vis:
+            #print('body user data', body.userData)
+            if body.userData["name"]=="weights":# and not self.vis:
                 # TODO This is very hard-coded. update this if I change visualization
                 #print('forcing state onto vis: height, heigh rate', state[state_keys.index('Height')], state[state_keys.index('Height_Rate')])
                 s.append(np.concatenate([
-                    list((state[state_keys.index('Height')],0.)),
+                    list((0., state[state_keys.index('Height')])),
                     [body.angle],
-                    list((state[state_keys.index('Height_Rate')],0.)),
+                    list((0., state[state_keys.index('Height_Rate')])),
                     [body.angularVelocity]
                 ]))
             else:
@@ -221,107 +207,51 @@ class StandEnvVime(Box2DEnv, Serializable):
                     list(body.linearVelocity),
                     [body.angularVelocity]
                 ]))
+        state = np.concatenate(s)
+        splitted = np.array(state).reshape((-1, 6))
+        for body, body_state in zip(self.world.bodies, splitted):
+            #print('setting state for body: with state:', body, body_state)
+            xpos, ypos, apos, xvel, yvel, avel = body_state
+            body.position = (xpos, ypos)
+            body.angle = apos
+            body.linearVelocity = (xvel, yvel)
+            body.angularVelocity = avel
+
         return np.concatenate(s)
 
-    # ========== Write to test stand =============
-    def _move_test_stand_to_init(self, height):
-        if self.shutoff: height = 0.75
-        self._send_default_commands()
-        #state = self._convert_state_dict_to_np_arr(copy.deepcopy(self._get_raw_obs_in_dict()))
-        state = self.get_raw_obs()
-        if self._use_proxy:
-            state[state_keys.index('Height')] = height
-
-        # TODO change max init steps back to 100
-        max_init_steps = 100
-        for i in range(max_init_steps):
-            # Compute error in current height and desired setpoint
-            state[state_keys.index('Height')] = state[state_keys.index('Height')] - height
-            # Drive error in height to zero
-            # TODO: Replace this LQR K with eliminated-dead-bands K
-            #state = self._convert_state_dict_to_np_arr(state)
-            action = np.dot(np.negative(self.K), np.array(state[:state_keys.index('Goal_Height')]))
-            state, _, _, _ = self.step(action, verbose=False, partial_obs='full')
-
-        if self.shutoff:
-            self.terminate()
-            import sys
-            sys.exit()
-    def _send_default_commands(self):
-        """
-        Send idle commands to test stand
-        """
-        self._bridge.send_default_commands()
-        time.sleep(self.timestep)
-
-    def _send_action(self, action, done):
-        """
-        Sends action to test stand and maintains constant rate
-        """
-        up = int(action[0])
-
-        # Convert current(mA) to duty cycle and ensure its non-negative
-        up_cycle = max(up, 0) / constants.max_ma
-        down_cycle = max(-up, 0) / constants.max_ma
-
-
-        if done: # Overwrite actions to zero actions when teststand is at the top or bottom height limit
-            if self._prev_state[state_keys.index('Height')] < constants.height_min:
-                action = action * 0.0 if up_cycle > 0 else action
-                up_cycle = 0.0
-
-            elif self._prev_state[state_keys.index('Height')] > constants.height_max:
-                action = action * 0.0 if down_cycle > 0 else action
-                down_cycle = 0.0
-
-
-        self._current_time = time.time()
-        # TODO: evaluate if moving of send_commands 8 lines higher has destroyed code 
-        # TODO: write try catch for sending commands
-        self._bridge.send_commands(down_cycle, up_cycle)
-
-        # Maintain delay of 'timeout'
-        if self._current_time - self._prev_time < self.timestep:
-            delay = self.timestep - (self._current_time - self._prev_time)
-            time.sleep(delay)
-        else:
-            warnings.warn("Delay exceeds set 'timeout' value")
-            print("[WARNING] Delay exceeds set 'timeout' value")
-
-        # TODO: evaluate if moving of prev_time 3 lines higher has destroyed code 
-        self._prev_time = time.time()
-
-    def close(self):
-        self._bridge.close()
-
     # ========== Standard functions =============
-    
-    def step(self, action, verbose=True, partial_obs=None):
+    def step(self, action, partial_obs=None):
         """Perform a step of the environment"""
-
-        #if self.is_normalized:
-        #    action = action * constants.max_ma
         # TODO evaluate why done is called before state transition?
         done = self.is_current_done()
 
-        self._send_action(action, done)
+        # Rescale dead-band
+        if action >= 0.:
+            action += self.dead_band
+        elif action < 0.:
+            action -= self.dead_band
+
+        self.test_stand.send_action(action, done=done)
 
         state = self.get_current_obs(partial_obs)
 
         reward = self.compute_reward(action, done)
 
-        if verbose and self.partial_obs=='height_only': print('t: %3d, u_t: %.8f x_t: %.5fm, g_t+1: %.5fm, R: %.4f'%(
+        if self.verbose and self.partial_obs=='height_only': print('t: %3d, u_t: %.8f x_t: %.5fm, g_t+1: %.5fm, R: %.4f'%(
             self.t, action[0], state[0],state[1], reward))
-        elif verbose and self.partial_obs=='err_only': print('t: %3d, u_t: %.8f err_t: %.5fm, R: %.4f'%(
+        elif self.verbose and self.partial_obs=='err_only': print('t: %3d, u_t: %.8f err_t: %.5fm, R: %.4f'%(
             self.t, action[0], state[0], reward))
-        elif verbose: print('Act: %.8f x_t+1: %.5fm, %.5fm/s, R: %.4f'%(
+        elif self.verbose: print('t: %4d u_t: %14.8f x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s, R: %9.4f'%(
+            self.t,
             action[0], state[(state_keys.index('Height'))],
-            state[(state_keys.index('Height_Rate'))], reward))
-
-        # TODO, check if it was bad, that i have moved prev state def into get_raw_obs
-        #self._prev_state = copy.deepcopy(state)
+            state[(state_keys.index('Height_Rate'))],
+            state[(state_keys.index('Goal_Height'))],
+            state[(state_keys.index('Goal_Velocity'))],
+            reward))
 
         info = {}
+
+        if self.vis: self.render()
 
         return state, reward, done, info
 
@@ -329,7 +259,7 @@ class StandEnvVime(Box2DEnv, Serializable):
     @overrides
     def reset(self, height=0.55, stay=False):
         """
-        Reset teststand and visualization. Environment to a specific height or to the previous height
+        Reset test stand and visualization. Environment to a specific height or to the previous height
 
         Args:
 
@@ -338,18 +268,22 @@ class StandEnvVime(Box2DEnv, Serializable):
         stay (bool): If True, send zero actions and reset to same height as earlier position
                      If False, reset to height specified by param height
         """
-        print('RESET CALLED')
+        print('RESET CALLED to height: ', height)
         self._prev_time = time.time()
         if not stay: # Reset test 
-            self._move_test_stand_to_init(height)
-        # TODO: why do I need another send default commands?
-        self._send_default_commands()
+            self.test_stand.init_state(height=height)
+
 
         # Reset timestep counter
-        self.t = 1
-
+        self.t = 0
         state = self.get_current_obs()
-        print('state on reset', state)
+        if self.verbose:
+            print('state after reset: t: %4d x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s'%(
+                self.t, state[(state_keys.index('Height'))],
+                state[(state_keys.index('Height_Rate'))],
+                state[(state_keys.index('Goal_Height'))],
+                state[(state_keys.index('Goal_Velocity'))]
+                ))
         
         #self._invalidate_state_caches() # Resets the cache of state that was built in get_current_obs; this is probably unnecessary
 
@@ -373,7 +307,8 @@ class StandEnvVime(Box2DEnv, Serializable):
     def terminate(self):
         print('env terminate called')
         self.reset(height=0.75)
-        self.close()
+        print('reset')
+        self.test_stand.close()
 
     @overrides
     def compute_reward(self, action, done):
@@ -384,6 +319,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         # Computations after stepping the world
 
         # TODO: evaluate why reward fn takes in prev_state, not state
+        #print('comp rew', action, done)
         if not done:
             if self.reward_fn.__name__ == 'goal_bias_action_penalty':
                 reward = self.reward_fn(
@@ -410,13 +346,18 @@ class StandEnvVime(Box2DEnv, Serializable):
 
     @overrides
     def forward_dynamics(self, action):
+        # TODO link this fn 
         raise NotImplementedError
 
     @property
     @overrides
     def action_space(self):
-        low = constants.action_low
-        high = constants.action_high
+        if self.max_action:
+            constants.action_high = np.array([self.max_action], dtype=np.float32)
+            constants.action_low = -constants.action_high    
+        high = constants.action_high - self.dead_band 
+        low = constants.action_low + self.dead_band
+
         return spaces.Box(low=low, high=high)
 
     @property
@@ -447,29 +388,141 @@ class StandEnvVime(Box2DEnv, Serializable):
         else:
             return np.asarray([0])
 
+def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
+
+    # Plot states
+    n_plts = len(constants.state_keys[:constants.state_keys.index('Height_Rate')]) + 1
+    n_plts = 3
+    fig, ax = plt.subplots(nrows=n_plts, ncols=1,figsize=(20,10*n_plts), dpi=80 )
+
+    for i, key in enumerate(constants.state_keys[constants.state_keys.index('Height'):constants.state_keys.index('Height_Rate')]):
+      #ax[i].title.set_text('averaged runs:')
+      #for n_i in range(n_itr):
+      #  ax[i].plot(time_steps, states[key][n_i,:], label=key+str(n_i))
+      ax[i].plot(time_steps, np.mean(states[key], axis=0), label=key)
+      ax[i].fill_between(time_steps, np.mean(states[key],axis=0) - np.std(states[key],axis=0),
+           np.mean(states[key],axis=0) + np.std(states[key],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(x_t)$")
+      #ax[i].plot(time_steps, goals[b_i,:], label="$x_{des}$")
+      ax[i].legend()
+      ax[i].set_ylabel(key)
+      ax[i].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
+      if key == "Height": # Plot Goal height into height plot
+          key = "Goal_Height"
+          ax[i].plot(time_steps, np.mean(states[key], axis=0), label=key)
+          ax[i].legend()
+
+    # Plot actions
+    ax[i+1].plot(time_steps, np.mean(actions, axis=0), label="$u_t$")
+    ax[i+1].fill_between(time_steps, np.mean(actions,axis=0) - np.std(actions,axis=0),
+           np.mean(actions,axis=0) + np.std(actions,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
+    #print('goal vel', states["Goal_Velocity"][0, :5])
+    #ax[i+1].plot(time_steps, np.mean(states["Goal_Velocity"], axis=0), label="Goal_Velocity")
+    ax[i+1].legend()
+    ax[i+1].set_ylabel('$u_t$ in $mA$')
+    ax[i+1].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
+
+    # Plot rewards
+    ax[i+2].title.set_text('avg Rew: '+ str(np.mean(np.mean(rewards,axis=0))))
+    ax[i+2].get_yaxis().get_major_formatter().set_useOffset(False)
+    ax[i+2].plot(time_steps, np.mean(rewards, axis=0), label="$R_t$")
+    ax[i+2].fill_between(time_steps, np.mean(rewards,axis=0) - np.std(rewards,axis=0),
+           np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(R_t)$")
+    ax[i+2].legend()
+    ax[i+2].set_ylabel('$R$')
+    ax[i+2].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
+    
+    plt.legend()
+    plt.suptitle('Simulated forward dyn on tst stand, averaged over %d itr, time/itr %.4fs'%(n_itr, np.mean(times))) # raised title
+
+    plt.savefig('forw_dyn_tst.png')
+    if(args.display):
+      matplotlib.use( 'tkagg' )
+      plt.show() 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--keyboard", action="store_true", help="Use keyboard as input")
+    parser.add_argument('--sim', type=str, default="sim_physics",
+                        choices=['sim','sim_physics','real'], help='Name of teststand to run on')
+    parser.add_argument("--display", action="store_true", help="Display plot")
     args = parser.parse_args()
 
-    env = StandEnvVime()
-    state = env.reset(height=0.45, stay=False)
+    dead_band=0.#550.
+    max_action = 900.
+    timestep = 0.02
+    env = StandEnvVime(sim=args.sim,
+        dead_band=dead_band,
+        max_action=max_action,
+        timeout=timestep)
+    state = env.reset(height=0.55, stay=False)
     print(state)
+
+    n_itr = 1
+    max_time = 500
+    time_steps = np.arange(max_time)
+    times = np.zeros((n_itr))
+    start_time = time.time()
+    # For plotting
+    actions = np.zeros((n_itr, max_time))
+    rewards = np.zeros((n_itr, max_time))
+    states = {
+      "Rod_Pressure": np.zeros((n_itr, max_time)),
+      "Base_Pressure": np.zeros((n_itr, max_time)),
+      "System_Pressure": np.zeros((n_itr, max_time)), 
+      "Load_Sense_Pressure": np.zeros((n_itr, max_time)), 
+      "Reservoir_Temperature": np.zeros((n_itr, max_time)),
+      "Height": np.zeros((n_itr, max_time)),
+      "Height_Rate": np.zeros((n_itr, max_time)),
+      "Goal_Height": np.zeros((n_itr, max_time)),
+      "Goal_Velocity": np.zeros((n_itr, max_time)),
+      "Prev_Action": np.zeros((n_itr, max_time)),
+      "Prev_Reward": np.zeros((n_itr, max_time))
+    }
+    d_h_dot_d_u_up = -1./700.
+    periods=2.
+    offset = 0. + np.pi/2. # offset from goal and cosinus
+    t_max = 500.
+    u_dead_band_min = -550.
+    task = tasks.SineTask(
+        steps=t_max, periods=periods, offset=offset, shift_and_scale=False)
+
     #_ = input("Enter")
-    for _ in range(10):
-        if args.keyboard:
-            action = np.zeros(shape=1, dtype=np.float32)
-            if keyboard.is_pressed("q"):
-                action[0] = 1.0
-            elif keyboard.is_pressed("a"):
-                action[0] = -1.0
-            action = action * 1200
-        else:
-            #action = env.action_space.sample()
-            action = [900.0]
-        state, _, _, _ = copy.deepcopy(env.step(action))
-        print('state', state[5:])
+    for n_i in range(n_itr):
+        for t in range(max_time):
+            if args.keyboard:
+                action = np.zeros(shape=1, dtype=np.float32)
+                if keyboard.is_pressed("q"):
+                    action[0] = 1.0
+                elif keyboard.is_pressed("a"):
+                    action[0] = -1.0
+                action = action * 1200
+            else:
+                #action = env.action_space.sample()
+                
+                delta_goal = np.array([task(t=t+1)], dtype=np.float64) * 2. * np.pi * periods / t_max  # Derivative of goal task : sin(h_offset + 2pi n_periods t/t_max)
+                delta_goal_height = delta_goal * 1./2. * (constants.goal_max - constants.goal_min)  # Derivative of shift and scale of goal task
+                action_incr = 1./d_h_dot_d_u_up * delta_goal_height 
+                action = 1./timestep * action_incr # 1/dt * action
+                if action <= 0.:
+                    action += u_dead_band_min
+                elif action > 0.:
+                    action -= u_dead_band_min
+            state, reward, done, info = copy.deepcopy(env.step(action))
+
+            # For plotting
+            actions[n_i,t] = action[0]
+            for key in constants.state_keys:
+                states[key][n_i, t] = state[constants.state_keys.index(key)]
+            rewards[n_i, t] = reward
+
+            print('reward, done, info', reward, done, info)
+        # Measure time per itrs
+        times[n_i] = time.time() - start_time
+        start_time = time.time()
+
     env.terminate()
+
+    plot_states(time_steps, n_itr, states, actions, times, rewards, args)
 
 if __name__ == "__main__":
     main()
