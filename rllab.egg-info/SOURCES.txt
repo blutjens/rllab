@@ -248,7 +248,6 @@ rllab/sandbox/vime/experiments/__init__.py
 rllab/sandbox/vime/experiments/bench_vime_stand.py
 rllab/sandbox/vime/experiments/resume_vime_stand.py
 rllab/sandbox/vime/experiments/run_experiment_lite.py
-rllab/sandbox/vime/experiments/run_sac_stand.py
 rllab/sandbox/vime/experiments/run_trpo.py
 rllab/sandbox/vime/experiments/run_trpo_expl.py
 rllab/sandbox/vime/experiments/run_trpo_stand.py

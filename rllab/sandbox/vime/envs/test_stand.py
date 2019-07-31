@@ -58,21 +58,20 @@ class TestStandSimPhysics(TestStand):
     """
     def __init__(self,
             env=None,
-            timestep=0.02):
+            timestep=0.02,
+            data_log=None):
 
         self._state = None
         self.env = env # Parent node
         self.dt = timestep
         if self.env is not None:
             assert self.dt == self.env.timestep # passed timestep and environment timestep should match
-
-        # Log metric for change in actions
-        self.change_in_act = [0]
+        self.data_log = data_log
 
     @overrides
     def init_state(self, height=0.55,init_state_dict=None):
-        logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.change_in_act[:-2]))))
-        self.change_in_act = [0]
+        logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2]))))
+        self.data_log["change_in_act"] = [0]
 
         if init_state_dict is None:
             # Init state; read off from sample_rollout_0.png
@@ -174,8 +173,8 @@ class TestStandSimPhysics(TestStand):
         Uses forward dynamics model to step to compute delta_state and steps the state
         Input: action as np.array((1,))
         """
-        self.change_in_act[-1] = np.abs(self.change_in_act[-1] - action[0])
-        self.change_in_act.append(action[0])
+        self.data_log["change_in_act"][-1] = np.abs(self.data_log["change_in_act"][-1] - action[0])
+        self.data_log["change_in_act"].append(action[0])
 
         assert self._state is not None, "[Error] Initialize sim state via calling TestStandSimPhysics.init_state(state)"
 

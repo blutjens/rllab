@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import time 
 import copy
 
+from tensorboardX import SummaryWriter
+
 from rllab import spaces
 from rllab.core.serializable import Serializable
 from rllab.envs.box2d.box2d_env import Box2DEnv
@@ -44,6 +46,7 @@ class StandEnvVime(Box2DEnv, Serializable):
                  dead_band=0.,
                  max_action=None,
                  verbose=True,
+                 log_tb=True,
                  *args, **kwargs):
         super(StandEnvVime, self).__init__(
             self.model_path("stand_env.xml.mako"),
@@ -96,16 +99,27 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.sigma = sigma
         self.action_penalty = action_penalty
 
+        # TensorboardX
+        if log_tb: self.writer = SummaryWriter(logdir="runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
+
+        # Log 
+        self.data_log = {
+            "change_in_act": [0],
+            "reward": []
+         }
+
+
         # Keep track of timestep.
         self.t = 0
         self.timestep = timeout # overwrites box2D timestep
+        self.n_i = 0 # number of iteration during training
 
         # Init test stand
         self.sim = sim # if true step in forward dyn simulation; if false step on physical test stand
         if self.sim=="sim":
             self.test_stand = TestStandSim(env=self)
         elif self.sim=="sim_physics":
-            self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep)
+            self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep, data_log=self.data_log)
         elif self.sim=="real":
             self.test_stand = TestStandReal(env=self, use_proxy=use_proxy)
         
@@ -253,6 +267,9 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         if self.vis: self.render()
 
+        if self.writer:
+            self.data_log["reward"].append(reward)
+
         return state, reward, done, info
 
 
@@ -268,11 +285,16 @@ class StandEnvVime(Box2DEnv, Serializable):
         stay (bool): If True, send zero actions and reset to same height as earlier position
                      If False, reset to height specified by param height
         """
+        print('writing:', self.writer, np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i, np.mean(np.asarray(self.data_log["reward"])))
+        if self.writer:
+            self.writer.add_scalar('data/change_in_act', np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i)
+            self.writer.add_scalar('data/reward', np.mean(np.asarray(self.data_log["reward"])), self.n_i)
+        self.data_log["reward"] = []
+
         print('RESET CALLED to height: ', height)
         self._prev_time = time.time()
         if not stay: # Reset test 
             self.test_stand.init_state(height=height)
-
 
         # Reset timestep counter
         self.t = 0
@@ -285,6 +307,8 @@ class StandEnvVime(Box2DEnv, Serializable):
                 state[(state_keys.index('Goal_Velocity'))]
                 ))
         
+        # Iterate number of training iteration
+        self.n_i += 1
         #self._invalidate_state_caches() # Resets the cache of state that was built in get_current_obs; this is probably unnecessary
 
         return state
@@ -457,7 +481,7 @@ def main():
     state = env.reset(height=0.55, stay=False)
     print(state)
 
-    n_itr = 1
+    n_itr = 5
     max_time = 500
     time_steps = np.arange(max_time)
     times = np.zeros((n_itr))
@@ -488,6 +512,7 @@ def main():
 
     #_ = input("Enter")
     for n_i in range(n_itr):
+        env.reset() 
         for t in range(max_time):
             if args.keyboard:
                 action = np.zeros(shape=1, dtype=np.float32)
@@ -519,7 +544,7 @@ def main():
         # Measure time per itrs
         times[n_i] = time.time() - start_time
         start_time = time.time()
-
+        print('n_i#', n_i)
     env.terminate()
 
     plot_states(time_steps, n_itr, states, actions, times, rewards, args)
