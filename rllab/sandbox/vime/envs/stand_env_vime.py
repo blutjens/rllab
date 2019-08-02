@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import time 
 import copy
 
-from tensorboardX import SummaryWriter
+import tensorflow as tf
+#from tensorboardX import SummaryWriter
 
 from rllab import spaces
 from rllab.core.serializable import Serializable
@@ -47,6 +48,8 @@ class StandEnvVime(Box2DEnv, Serializable):
                  max_action=None,
                  verbose=True,
                  log_tb=True,
+                 log_dir="runs/tst",
+                 clear_logdir=False,
                  *args, **kwargs):
         super(StandEnvVime, self).__init__(
             self.model_path("stand_env.xml.mako"),
@@ -99,8 +102,18 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.sigma = sigma
         self.action_penalty = action_penalty
 
-        # TensorboardX
-        if log_tb: self.writer = SummaryWriter(logdir="runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
+        # Tensorboard
+        #if log_tb: self.writer = SummaryWriter(logdir="/home/bjoern/Desktop/vector-solenoid/rllab/rllab/sandbox/vime/envs/runs/tst/")#runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
+        if log_tb:
+            # TODO take the line that deletes the logdir out of the code
+            if clear_logdir:
+                import shutil
+                try:
+                    shutil.rmtree(log_dir)
+                except OSError as e:
+                    print("Error: %s - %s."%(e.filename, e.strerror))
+            self.summary_writer = tf.summary.FileWriter(log_dir)
+            self.summary = tf.Summary()
 
         # Log 
         self.data_log = {
@@ -233,10 +246,51 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         return np.concatenate(s)
 
+    # =========== Logging ==================
+    def print_status(self, action, state, reward):
+        """
+        Print status of current step
+        """
+        if self.verbose and self.partial_obs=='height_only': print('t: %3d, u_t: %.8f x_t: %.5fm, g_t+1: %.5fm, R: %.4f'%(
+            self.t, action[0], state[0],state[1], reward))
+        elif self.verbose and self.partial_obs=='err_only': print('t: %3d, u_t: %.8f err_t: %.5fm, R: %.4f'%(
+            self.t, action[0], state[0], reward))
+        elif self.verbose: print('t: %4d u_t: %14.8f x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s, R: %9.4f'%(
+            self.t,
+            action[0], state[(state_keys.index('Height'))],
+            state[(state_keys.index('Height_Rate'))],
+            state[(state_keys.index('Goal_Height'))],
+            state[(state_keys.index('Goal_Velocity'))],
+            reward))
+
+    def log_tensorboard(self):
+        """
+        Adds log to tensorboard summary
+        """
+        print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["reward"])))
+        if self.n_i == 1:
+            print('ADDING SUMMARY')
+            self.summary.value.add(tag="data/reward", simple_value=np.sum(np.asarray(self.data_log["reward"])))
+            self.summary.value.add(tag="data/change_in_act", simple_value=np.mean(np.asarray(self.data_log["change_in_act"][:-2])))
+        if len(self.data_log["reward"]) != 0 and self.n_i > 1: 
+            print('self summarvy val', self.summary.value)
+            self.summary.value[0].simple_value = np.sum(np.asarray(self.data_log["reward"]))
+            self.summary.value[1].simple_value = np.mean(np.asarray(self.data_log["change_in_act"][:-2]))
+            #self.summary = tf.Summary(value=[
+            #tf.Summary.Value(tag="summary_tag", simple_value=value), 
+            #])
+            self.summary_writer.add_summary(self.summary, int(self.n_i/2))
+            self.data_log["reward"] = []
+
+    def append_log(self, reward):
+        """ 
+        Add values to local dictionary log
+        """
+        self.data_log["reward"].append(reward)
+
     # ========== Standard functions =============
     def step(self, action, partial_obs=None):
         """Perform a step of the environment"""
-        # TODO evaluate why done is called before state transition?
         done = self.is_current_done()
 
         # Rescale dead-band
@@ -251,30 +305,18 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         reward = self.compute_reward(action, done)
 
-        if self.verbose and self.partial_obs=='height_only': print('t: %3d, u_t: %.8f x_t: %.5fm, g_t+1: %.5fm, R: %.4f'%(
-            self.t, action[0], state[0],state[1], reward))
-        elif self.verbose and self.partial_obs=='err_only': print('t: %3d, u_t: %.8f err_t: %.5fm, R: %.4f'%(
-            self.t, action[0], state[0], reward))
-        elif self.verbose: print('t: %4d u_t: %14.8f x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s, R: %9.4f'%(
-            self.t,
-            action[0], state[(state_keys.index('Height'))],
-            state[(state_keys.index('Height_Rate'))],
-            state[(state_keys.index('Goal_Height'))],
-            state[(state_keys.index('Goal_Velocity'))],
-            reward))
+        self.print_status(action, state, reward)
 
         info = {}
 
         if self.vis: self.render()
 
-        if self.writer:
-            self.data_log["reward"].append(reward)
+        if self.summary_writer: self.append_log(reward)
 
         return state, reward, done, info
 
-
     @overrides
-    def reset(self, height=0.55, stay=False):
+    def reset(self, height=0.55, stay=False, create_log=True):
         """
         Reset test stand and visualization. Environment to a specific height or to the previous height
 
@@ -285,11 +327,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         stay (bool): If True, send zero actions and reset to same height as earlier position
                      If False, reset to height specified by param height
         """
-        print('writing:', self.writer, np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i, np.mean(np.asarray(self.data_log["reward"])))
-        if self.writer:
-            self.writer.add_scalar('data/change_in_act', np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i)
-            self.writer.add_scalar('data/reward', np.mean(np.asarray(self.data_log["reward"])), self.n_i)
-        self.data_log["reward"] = []
+        if create_log: self.log_tensorboard()
 
         print('RESET CALLED to height: ', height)
         self._prev_time = time.time()
@@ -309,7 +347,6 @@ class StandEnvVime(Box2DEnv, Serializable):
         
         # Iterate number of training iteration
         self.n_i += 1
-        #self._invalidate_state_caches() # Resets the cache of state that was built in get_current_obs; this is probably unnecessary
 
         return state
 
@@ -331,7 +368,10 @@ class StandEnvVime(Box2DEnv, Serializable):
     def terminate(self):
         print('env terminate called')
         self.reset(height=0.75)
-        print('reset')
+
+        # Print and save log
+        self.summary_writer.flush()
+
         self.test_stand.close()
 
     @overrides
@@ -454,7 +494,7 @@ def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
     ax[i+2].legend()
     ax[i+2].set_ylabel('$R$')
     ax[i+2].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
-    
+
     plt.legend()
     plt.suptitle('Simulated forward dyn on tst stand, averaged over %d itr, time/itr %.4fs'%(n_itr, np.mean(times))) # raised title
 
@@ -477,9 +517,8 @@ def main():
     env = StandEnvVime(sim=args.sim,
         dead_band=dead_band,
         max_action=max_action,
-        timeout=timestep)
-    state = env.reset(height=0.55, stay=False)
-    print(state)
+        timeout=timestep,
+        verbose=False)
 
     n_itr = 5
     max_time = 500
@@ -512,7 +551,8 @@ def main():
 
     #_ = input("Enter")
     for n_i in range(n_itr):
-        env.reset() 
+        state = env.reset(height=0.55, stay=False)
+        print(state)
         for t in range(max_time):
             if args.keyboard:
                 action = np.zeros(shape=1, dtype=np.float32)
@@ -540,7 +580,7 @@ def main():
                 states[key][n_i, t] = state[constants.state_keys.index(key)]
             rewards[n_i, t] = reward
 
-            print('reward, done, info', reward, done, info)
+            #print('reward, done, info', reward, done, info)
         # Measure time per itrs
         times[n_i] = time.time() - start_time
         start_time = time.time()

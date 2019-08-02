@@ -100,6 +100,7 @@ def _worker_collect_one_path(G, max_path_length, itr, normalize_reward,
                              reward_mean, reward_std, kl_batch_size, n_itr_update, use_replay_pool,
                              obs_mean, obs_std, act_mean, act_std, second_order_update, animated=False):
     # Path rollout.
+    print('calling rollout from parallel_sampler_expl:', G.env)
     path = rollout(G.env, G.policy, max_path_length, animated=animated)
     # Take this out for non StandEnvs
     #logger.log('Resetting env from parallel_sampler_expl.py')

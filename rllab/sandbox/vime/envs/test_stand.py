@@ -68,6 +68,22 @@ class TestStandSimPhysics(TestStand):
             assert self.dt == self.env.timestep # passed timestep and environment timestep should match
         self.data_log = data_log
 
+        # Parameters that govern forward dynamics
+        # Set parameters for going up (max height to min height)
+        #t_max_to_min = 2. # Time in s for test stand to go from goal_max to goal_min under max_ma (i.e., going up)
+        #h_dot_max = (constants.goal_max - constants.goal_min) / t_max_to_min # Maximum height rate in s (going up)
+        self.h_dot_max = 0.01 / 0.02 # (delta_height_max / timestep) # Maximum height rate in s (going up)
+        self.u_lim_min =  -900. # Control in mA that results in maximum height rate
+        self.u_dead_band_min = -550. # Control in mA at which starts the dead band (estimated conservatively: u_dead_band_min_est < u_dead_band_min_true)
+        self.d_h_dot_d_u_up = (0. - self.h_dot_max)/(self.u_dead_band_min - self.u_lim_min) # Slope height rate over control 
+        
+        # Set parameters for going down (min height to max height)
+        #t_min_to_max = t_max_to_min
+        self.h_dot_min = - self.h_dot_max
+        self.u_lim_max = - self.u_lim_min
+        self.u_dead_band_max = - self.u_dead_band_min
+        self.d_h_dot_d_u_down = self.d_h_dot_d_u_up
+
     @overrides
     def init_state(self, height=0.55,init_state_dict=None):
         logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2]))))
@@ -111,37 +127,23 @@ class TestStandSimPhysics(TestStand):
                     |          |u_dead_band_max
                     |            |u_lim_max
                     |               |u_max
-        Input:  action:         np.array((1,))
+        Input:  action:         np.array((1,)) 
         Output: delta_height:   scalar
         # Parameters read from real test stand https://docs.google.com/document/d/16z_831MBuBFatXZmqVgQ1tiDi-yptQzAKWgK85k8Ww0/edit?usp=sharing
         """
-        # Set parameters for going up (max height to min height)
-        #t_max_to_min = 2. # Time in s for test stand to go from goal_max to goal_min under max_ma (i.e., going up)
-        #h_dot_max = (constants.goal_max - constants.goal_min) / t_max_to_min # Maximum height rate in s (going up)
-        h_dot_max = 0.01 / 0.02 # (delta_height_max / timestep) # Maximum height rate in s (going up)
-        u_lim_min =  -900. # Control in mA that results in maximum height rate
-        u_dead_band_min = -550. # Control in mA at which starts the dead band (estimated conservatively: u_dead_band_min_est < u_dead_band_min_true)
-        d_h_dot_d_u_up = (0. - h_dot_max)/(u_dead_band_min - u_lim_min) # Slope height rate over control 
-        
-        # Set parameters for going down (min height to max height)
-        #t_min_to_max = t_max_to_min
-        h_dot_min = - h_dot_max
-        u_lim_max = - u_lim_min
-        u_dead_band_max = - u_dead_band_min
-        d_h_dot_d_u_down = d_h_dot_d_u_up
 
         action = action[0]
         # Calculate height rate, given action
-        if -constants.max_ma <= action < u_lim_min:
-            h_dot = h_dot_max
-        elif action < u_dead_band_min:
-            h_dot = d_h_dot_d_u_up * (action - u_dead_band_min)
-        elif action < u_dead_band_max:
+        if -constants.max_ma <= action < self.u_lim_min:
+            h_dot = self.h_dot_max
+        elif action < self.u_dead_band_min:
+            h_dot = self.d_h_dot_d_u_up * (action - self.u_dead_band_min)
+        elif action < self.u_dead_band_max:
             h_dot = 0.
-        elif action < u_lim_max:
-            h_dot = d_h_dot_d_u_down * (action - u_dead_band_max)
+        elif action < self.u_lim_max:
+            h_dot = self.d_h_dot_d_u_down * (action - self.u_dead_band_max)
         elif action <= constants.max_ma:
-            h_dot = h_dot_min
+            h_dot = self.h_dot_min
         else:
             raise ValueError('commanded action %f is out of range'%(action))
 

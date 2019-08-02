@@ -1,6 +1,6 @@
 {
-  "args_data": "gASViAQAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjAtzaW1fcGh5c2ljc5SMA3Zpc5SJjAd2ZXJib3NllImMCWRlYWRfYmFuZJRHQIEwAAAAAACMCm1heF9hY3Rpb26UR0CMIAAAAAAAdYwLcHJveHlfY2xhc3OUjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gbjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoG4wicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGgmaCgpgZR9lChoK2gOaCxoLXVic2gbjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylE3QB4wJc3RlcF9zaXpllEc/hHrhR64Ue4wDZXRhlEc/Gjbi6xxDLYwNc25uX25fc2FtcGxlc5RLCowQc3Vic2FtcGxlX2ZhY3RvcpRHP/AAAAAAAACMD3VzZV9yZXBsYXlfcG9vbJSIjAx1c2Vfa2xfcmF0aW+UiIwOdXNlX2tsX3JhdGlvX3GUiIwMbl9pdHJfdXBkYXRllEsBjA1rbF9iYXRjaF9zaXpllEsBjBBub3JtYWxpemVfcmV3YXJklImMEHJlcGxheV9wb29sX3NpemWUSkBCDwCMFG5fdXBkYXRlc19wZXJfc2FtcGxllE2IE4wTc2Vjb25kX29yZGVyX3VwZGF0ZZSIjAx1bm5fbl9oaWRkZW6UXZRLIGGMD3Vubl9sYXllcnNfdHlwZZRdlChLAUsBZYwEcGxvdJSJjBF1bm5fbGVhcm5pbmdfcmF0ZZRHPxo24uscQy2MCGFuaW1hdGVklIl1aBuMInJsbGFiLnNhbmRib3gudmltZS5hbGdvcy50cnBvX2V4cGyUjARUUlBPlJOUdWKMBXRyYWlulCl9lHSUjAhfX2t3YXJnc5R9lHViLg==",
-  "exp_name": "vime-stand_2019_07_29_22_27_27_0001",
+  "args_data": "gASVzwQAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjAtzaW1fcGh5c2ljc5SMA3Zpc5SJjAd2ZXJib3NllImMCWRlYWRfYmFuZJRHQIEwAAAAAACMCm1heF9hY3Rpb26UR0CMIAAAAAAAjAdsb2dfZGlylIw6cnVucy9sb2dzX3RycG9fc2ltX3BoeXNpY3Nfc3Rfc3pfMC4wMDFfc2RfMF9kYl81NTBfbWF4XzkwMJR1jAtwcm94eV9jbGFzc5SMJnJsbGFiLnNhbmRib3gudmltZS5lbnZzLnN0YW5kX2Vudl92aW1llIwMU3RhbmRFbnZWaW1llJOUdWJzaB2MGXJsbGFiLmVudnMubm9ybWFsaXplZF9lbnaUjA1Ob3JtYWxpemVkRW52lJOUdWKMBnBvbGljeZRoBymBlH2UKGgKKWgLfZQojAhlbnZfc3BlY5RoAIwIU3R1YkF0dHKUk5QpgZR9lCiMBF9vYmqUaA6MCl9hdHRyX25hbWWUjARzcGVjlHVijAxoaWRkZW5fc2l6ZXOUS0BLIIaUdWgdjCJybGxhYi5wb2xpY2llcy5nYXVzc2lhbl9tbHBfcG9saWN5lIwRR2F1c3NpYW5NTFBQb2xpY3mUk5R1YowIYmFzZWxpbmWUaAcpgZR9lChoCiloC32UaChoKimBlH2UKGgtaA5oLmgvdWJzaB2MJ3JsbGFiLmJhc2VsaW5lcy5saW5lYXJfZmVhdHVyZV9iYXNlbGluZZSMFUxpbmVhckZlYXR1cmVCYXNlbGluZZSTlHVijApiYXRjaF9zaXpllE2IE4wLd2hvbGVfcGF0aHOUiIwPbWF4X3BhdGhfbGVuZ3RolE30AYwFbl9pdHKUTdAHjAlzdGVwX3NpemWURz+EeuFHrhR7jANldGGURz8aNuLrHEMtjA1zbm5fbl9zYW1wbGVzlEsKjBBzdWJzYW1wbGVfZmFjdG9ylEc/8AAAAAAAAIwPdXNlX3JlcGxheV9wb29slIiMDHVzZV9rbF9yYXRpb5SIjA51c2Vfa2xfcmF0aW9fcZSIjAxuX2l0cl91cGRhdGWUSwGMDWtsX2JhdGNoX3NpemWUSwGMEG5vcm1hbGl6ZV9yZXdhcmSUiYwQcmVwbGF5X3Bvb2xfc2l6ZZRKQEIPAIwUbl91cGRhdGVzX3Blcl9zYW1wbGWUTYgTjBNzZWNvbmRfb3JkZXJfdXBkYXRllIiMDHVubl9uX2hpZGRlbpRdlEsgYYwPdW5uX2xheWVyc190eXBllF2UKEsBSwFljARwbG90lImMEXVubl9sZWFybmluZ19yYXRllEc/Gjbi6xxDLYwIYW5pbWF0ZWSUiXVoHYwicmxsYWIuc2FuZGJveC52aW1lLmFsZ29zLnRycG9fZXhwbJSMBFRSUE+Uk5R1YowFdHJhaW6UKX2UdJSMCF9fa3dhcmdzlH2UdWIu",
+  "exp_name": "vime-stand_2019_08_01_05_48_22_0004",
   "json_args": {
     "algo": {
       "_name": "rllab.sandbox.vime.algos.trpo_expl.TRPO",
@@ -41,6 +41,7 @@
           "env": {
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "dead_band": 550.0,
+            "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.001_sd_0_db_550_max_900",
             "max_action": 900.0,
             "sim": "sim_physics",
             "timeout": 0.02,
@@ -55,6 +56,7 @@
       "env": {
         "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
         "dead_band": 550.0,
+        "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.001_sd_0_db_550_max_900",
         "max_action": 900.0,
         "sim": "sim_physics",
         "timeout": 0.02,
@@ -71,6 +73,7 @@
           "env": {
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "dead_band": 550.0,
+            "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.001_sd_0_db_550_max_900",
             "max_action": 900.0,
             "sim": "sim_physics",
             "timeout": 0.02,

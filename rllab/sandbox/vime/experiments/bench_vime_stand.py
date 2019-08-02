@@ -10,8 +10,10 @@ import os
 os.environ["THEANO_FLAGS"] = "device=cpu"
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
-
+import matplotlib.pyplot as plt#
+#from brokenaxes import brokenaxes
+from matplotlib.gridspec import GridSpec
+        
 from solenoid.envs.constants import state_keys
 from solenoid.envs import constants
 
@@ -31,6 +33,12 @@ if __name__ == "__main__":
                         help='Speedup')
     parser.add_argument('--display', action="store_true", default=False,
                         help='plot and print results')
+    parser.add_argument('--not_save_fig', action="store_false", default=False,
+                        help='save plot in file')
+    parser.add_argument('--deterministic', action="store_true", default=False,
+                        help='rollout deterministic')
+    parser.add_argument('--tst_scenario', type=str, default=None,
+                        help='test scenario')
     args = parser.parse_args()
 
     model_file = 'data/' + args.model + '.pkl'
@@ -50,33 +58,29 @@ if __name__ == "__main__":
         print('not disp')
         env.wrapped_env.vis = False
     n_bench_itr = 20
-
     tst_params = ['sine']#, 'chirp', 'step']
     plot_mult_tst_params = True
     plt.rcParams.update({'font.size': 28})
     
     n_plts_p_param = 6
-    fig, ax = plt.subplots(nrows=len(tst_params)*n_plts_p_param, ncols=1,figsize=(20,len(tst_params)*10*n_plts_p_param), dpi=80 )
+    fig_height = len(tst_params)*10*n_plts_p_param 
+    fig = plt.figure(figsize=(20,fig_height), dpi=80 )
+    sps = GridSpec(nrows=len(tst_params)*n_plts_p_param, ncols=1)    #fig = plt.figure(figsize=(5,5))
 
     for p_i, tst_param in enumerate(tst_params):
-        #import matplotlib.gridspec as gridspec
-        #outer = gridspec.GridSpec(len(tst_params)*n_plts_p_param, 1) 
-        #make nested gridspecs
-        #gs1 = gridspec.GridSpecFromSubplotSpec(1, 1, subplot_spec = outer[0])
-        #gs2 = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec = outer[1], hspace = .05)
 
         # Get env/net/policy params for printing
         algo_name_long = data['algo'].__class__.__module__ + '.' + data['algo'].__class__.__name__
         vime = '+ VIME' if 'vime' in algo_name_long else ''
         trpo = 'TRPO' if 'trpo' in algo_name_long else ''
         algo_name = trpo + vime
-        print('data', data, vime)
-        if vime != '':
-            r_train = np.mean(data['episode_rewards'])
-            eps_length = int(np.mean(data['episode_lengths']))
-        else:  
-            r_train = None
-            eps_length = None
+        step_size = data['algo'].step_size
+        #if vime != '':
+        #    r_train = None#np.mean(data['episode_rewards'])
+        #    eps_length = int(np.mean(data['episode_lengths']))
+        #else:  
+        r_train = None
+        eps_length = int(data['algo'].max_path_length)
         train_itr_res = data['itr']
         net_in_dim = policy._mean_network._layers[0].shape[1]
         net_shape = [layer.num_units for layer in policy._mean_network._layers[1:-1]]
@@ -91,8 +95,29 @@ if __name__ == "__main__":
         print('set eval reward fn sigma to ', env.wrapped_env.sigma)
 
         # Test under different task / goal / transition dyn
-        env.wrapped_env.task = SineTask(
-                steps=500, periods=2., offset=0.)
+        if args.tst_scenario=="chirp":
+            env.wrapped_env.task = ChirpTask(
+                    steps=500, periods=1., offset=0.)
+        elif args.tst_scenario=="step":
+            env.wrapped_env.task = StepTask(
+                    steps=500, periods=1., offset=0.)    
+        elif args.tst_scenario=="larger_deadbands":
+            env.wrapped_env.test_stand.u_dead_band_min = -750.
+            env.wrapped_env.test_stand.u_dead_band_max = -env.wrapped_env.test_stand.u_dead_band_min
+        elif args.tst_scenario=="no_deadbands":
+            env.wrapped_env.test_stand.u_dead_band_min = -0.1
+            env.wrapped_env.test_stand.u_dead_band_max = -env.wrapped_env.test_stand.u_dead_band_min
+        elif args.tst_scenario=="lower_height_rate_up":
+            env.wrapped_env.task = SineTask(
+                    steps=500, periods=1., offset=0.)    
+            env.wrapped_env.test_stand.d_h_dot_d_u_up = -1./1300.
+            env.wrapped_env.test_stand.d_h_dot_d_u_down = -1./100.#50.
+        elif args.tst_scenario=="greater_height_rate_up":
+            env.wrapped_env.test_stand.d_h_dot_d_u_up = -1./100.
+            env.wrapped_env.test_stand.d_h_dot_d_u_down = -1./1500.
+
+        #env.wrapped_env.task = SineTask(
+        #        steps=500, periods=1., offset=0.)
 
         mcae_scores = np.zeros(n_bench_itr)
         cum_rews = np.zeros(n_bench_itr)
@@ -101,6 +126,8 @@ if __name__ == "__main__":
         goals = np.zeros((n_bench_itr, args.max_path_length))
         actions = np.zeros((n_bench_itr, args.max_path_length))
         rewards = np.zeros((n_bench_itr, args.max_path_length))
+        change_in_actions = np.zeros((n_bench_itr))
+        act_std_dev = np.zeros((args.max_path_length-1)) 
         for b_i in range(n_bench_itr):
 
             # Execute and log 
@@ -116,7 +143,7 @@ if __name__ == "__main__":
             actions[b_i,:len(path['actions'][:,0])] = path['actions'][:,0]
             rewards[b_i,:len(path['rewards'])] = path['rewards']
             cum_rews[b_i] = np.sum(np.array(rewards[b_i,:]))
-            time_steps = np.arange(state['Height'].shape[0])
+            time_steps = np.arange(state['Height'].shape[0])#np.zeros((args.max_path_length))#
             # Get env params
             print('ts', time_steps.shape)
             print('rew', rewards.shape)
@@ -125,13 +152,12 @@ if __name__ == "__main__":
             # Scale actions to [-max_ma, max_ma]
             lb, ub = env.wrapped_env.action_space.bounds
             print('action bnd', lb, ub)
-            print('actions', actions[b_i, :10])
+            print('actions', actions[b_i,:10])
             actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
             actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
             print('actions', actions[b_i, :10])
-            # Map dead band
-            #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) < (550.-dead_band), 0., actions[b_i,:])#+dead_band*np.sign(actions[b_i,:]))
-            #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) > (900.-dead_band), 900.-dead_band, actions[b_i,:])
+            # Calculate change and std dev in actions
+            change_in_actions[b_i] = np.mean(np.abs(actions[b_i,1:] - actions[b_i,:-1]))
 
             #Convert to shape [episodes *time * number of height dimensions] for metric computation
             achieved_heights = np.expand_dims(np.expand_dims(np.array(heights[b_i,:]).T,axis=0),axis=2)
@@ -148,84 +174,144 @@ if __name__ == "__main__":
             mcse_scores[b_i] = mean_cumulative_squared_error(achieved_heights,target_heights,weights=None)
             if(args.display):
                 print('MCSE :',mcse_scores[b_i])
+            
 
-            if plot_mult_tst_params and b_i==n_bench_itr-1:
-                # Plot mean and variance of states over runs
-                plt_i = 0
-                ax[2*p_i + plt_i].title.set_text('averaged runs:')
+        act_std_dev[:] = np.std(actions[:,1:],axis=0)
+        # Map dead band
+        actions[:,:] = np.where(actions[:,:] < 0., actions[:,:] - dead_band, actions[:,:] + dead_band)#+dead_band*np.sign(actions[b_i,:]))
+        #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) < (550.-dead_band), 0., actions[b_i,:])#+dead_band*np.sign(actions[b_i,:]))
+        #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) > (900.-dead_band), 900.-dead_band, actions[b_i,:])
 
-                ax[2*p_i + plt_i].plot(time_steps, np.mean(heights,axis=0), label="$\mu(x_t)$")
-                ax[2*p_i + plt_i].fill_between(time_steps, np.mean(heights,axis=0) - np.std(heights,axis=0),
-                     np.mean(heights,axis=0) + np.std(heights,axis=0), color='blue', alpha=0.2, label="$\pm \sigma(x_t)$")
-                ax[2*p_i + plt_i].plot(time_steps, goals[b_i,:], label="$x_{des}$")
-                ax[2*p_i + plt_i].legend()
-                ax[2*p_i + plt_i].set_ylabel('$x_t$ in $m$')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-                plt_i += 1
-                ax[2*p_i + plt_i].plot(time_steps[1:], np.mean(actions[:,1:],axis=0), label="$\mu(u_t)$")
-                ax[2*p_i + plt_i].fill_between(time_steps[1:], np.mean(actions[:,1:],axis=0) - np.std(actions[:,1:],axis=0),
-                     np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
-                ax[2*p_i + plt_i].set_ylabel('$u_t$ in $mA$')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-                ax[2*p_i + plt_i].legend()
-                plt_i += 1
-                ax[2*p_i + plt_i].plot(time_steps, np.mean(rewards,axis=0), label="$\mu(R)$")
-                ax[2*p_i + plt_i].fill_between(time_steps, np.mean(rewards,axis=0) - np.std(rewards,axis=0),
-                     np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(R)$")
-                ax[2*p_i + plt_i].set_ylabel('$R$ ')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-                ax[2*p_i + plt_i].legend()
-                            
-                ax[2*p_i + 0].title.set_text('Averaged over $%d$ itr, on %s, MCAE: $%.4f\pm%.3f$, \n MCSE $%.4f\pm%.3f$, Rew: $%.2f\pm%.3f$: \n'%(
+        if plot_mult_tst_params and b_i==n_bench_itr-1:
+            # Plot mean and variance of states over runs
+            plt_i = 0
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.title.set_text('Averaged over $%d$ itr, on %s, MCAE: $%.4f\pm%.3f$, \n MCSE $%.4f\pm%.3f$, Rew: $%.2f\pm%.3f$: \n'\
+                '$\Delta u:%.3f\pm%.2fmA$, $\sigma(u_t): %.3f\pm%.3fmA$'%(
                 n_bench_itr, tst_param, np.mean(mcae_scores), np.std(mcae_scores),
                 np.mean(mcse_scores), np.std(mcse_scores),
-                np.mean(cum_rews), np.std(cum_rews)))
+                np.mean(cum_rews), np.std(cum_rews),
+                np.mean(change_in_actions), np.std(change_in_actions),
+                np.mean(act_std_dev), np.std(act_std_dev)
+                ))
 
-                # Plot tracking results and compute score for chosen metric
-                plt_i += 1
-                ax[2*p_i + plt_i].title.set_text('sample run:')                                                
-                ax[2*p_i + plt_i].plot(time_steps, goals[b_i,:], label="$x_{des}$")
-                ax[2*p_i + plt_i].plot(time_steps, heights[b_i,:], label="x_t")
-                ax[2*p_i + plt_i].legend()
-                ax[2*p_i + plt_i].set_ylabel('$x_t$ in $m$')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-                plt_i += 1
-                ax[2*p_i + plt_i].plot(time_steps[1:], actions[b_i,1:], '-', label="actions applied")
-                ax[2*p_i + plt_i].set_ylabel('$u_t$ in $mA$')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-                plt_i += 1
-                ax[2*p_i + plt_i].plot(time_steps, rewards[b_i,:], '-', label="actions applied")
-                ax[2*p_i + plt_i].set_ylabel('$R$ ')
-                ax[2*p_i + plt_i].set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
-            elif b_i==n_bench_itr-1:
-                print('not plotting mult test param')
-                fig, ax = plt.subplots(nrows=2, ncols=1)
-                
-                ax[0].plot(time_steps, goals[b_i,:], label="target heights")
-                ax[0].plot(time_steps, heights[b_i,:], label="reached heights")
-                
-                ax[1].plot(time_steps[1:], actions[b_i,1:], label="actions applied")
-                plt.title(str(tst_param) + " Tracking Result")
+            #ax.title.set_text('averaged runs:')
+            ax.plot(time_steps, np.mean(heights,axis=0), label="$\mu(x_t)$")
+            ax.fill_between(time_steps, np.mean(heights,axis=0) - np.std(heights,axis=0),
+                 np.mean(heights,axis=0) + np.std(heights,axis=0), color='blue', alpha=0.2, label="$\pm \sigma(x_t)$")
+            ax.plot(time_steps, goals[b_i,:], label="$x_{des}$")
+            ax.legend()
+            ax.set_ylabel('$x_t$ in $m$')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+
+            plt_i += 1
+            #ax = brokenaxes(ylims=((-750, -550),(550, 750)), subplot_spec=sps[2*p_i + plt_i, 0])
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.plot(time_steps[1:], np.mean(actions[:,1:],axis=0), label="$\mu(u_t)$")
+            ax.fill_between(time_steps[1:], np.mean(actions[:,1:],axis=0) - np.std(actions[:,1:],axis=0),
+                 np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
+            ax.set_ylabel('$u_t$ in $mA$')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            ax.legend()
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.plot(time_steps, np.mean(rewards,axis=0), label="$\mu(R)$")
+            ax.fill_between(time_steps, np.mean(rewards,axis=0) - np.std(rewards,axis=0),
+                 np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(R)$")
+            ax.set_ylabel('$R$ ')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            ax.legend()
+
+            # Plot tracking results and compute score for chosen metric
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.title.set_text('sample run:')                                                
+            ax.plot(time_steps, goals[b_i,:], label="$x_{des}$")
+            ax.plot(time_steps, heights[b_i,:], label="x_t")
+            ax.legend()
+            ax.set_ylabel('$x_t$ in $m$')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.plot(time_steps[1:], actions[b_i,1:], '-', label="$u_t$")
+            ax.set_ylabel('$u_t$ in $mA$')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.plot(time_steps, rewards[b_i,:], '-', label="$R_t$")
+            ax.set_ylabel('$R$ ')
+            ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+
+            # Execute and log deterministic rollout
+            path = rollout(env, policy, max_path_length=args.max_path_length,
+               animated=False, speedup=args.speedup, deterministic=True)
+            state = {key:path['observations'][:,state_keys.index(key)] for key in state_keys}
+            heights[b_i,:len(state['Height'])] = state['Height']
+            actions[b_i,:len(path['actions'][:,0])] = path['actions'][:,0]
+            rewards[b_i,:len(path['rewards'])] = path['rewards']
+            actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
+            actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
+            change_in_actions_det = np.abs(actions[b_i,1:] - actions[b_i,:-1])
+            actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
+            actions[:,:] = np.where(actions[:,:] < 0., actions[:,:] - dead_band, actions[:,:] + dead_band)#+dead_band*np.sign(actions[b_i,:]))
+
+            # Plot tracking results and compute score for chosen metric
+            plt_i -= 2
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.plot(time_steps, heights[b_i,:], '-',color='green', label="$x_{t, det}$")
+            ax.legend()
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            #ax.title.set_text('$\mu_{steps}(\Delta u):%.3f\pm%.3fmA$, $\sigma_\{steps\}(u_t): %.3fmA$'%(
+            #    np.mean(change_in_actions_det), np.std(change_in_actions_det),
+            #    np.std(actions[b_i,:])
+            #    ))            
+            ax.plot(time_steps[1:], actions[b_i,1:], '-',color='green',  label="$u_{t, det}$")
+            ax.legend()
+            plt_i += 1
+            ax = plt.subplot(sps[2*p_i + plt_i, 0])
+            ax.title.set_text('Rew: $%.2f$'%(np.sum(rewards[b_i,:])))
+            ax.plot(time_steps, rewards[b_i,:], '-', color='green', label="$R_{t, det}$")
+            ax.legend()
+
+
+        elif b_i==n_bench_itr-1:
+            print('not plotting mult test param')
+            fig, ax = plt.subplots(nrows=2, ncols=1)
+            
+            ax[0].plot(time_steps, goals[b_i,:], label="target heights")
+            ax[0].plot(time_steps, heights[b_i,:], label="reached heights")
+            
+            ax[1].plot(time_steps[1:], actions[b_i,1:], label="actions applied")
+            plt.title(str(tst_param) + " Tracking Result")
+            
+        #fig = plt.figure(figsize=(5,5))
+        #sps1, sps2 = GridSpec(2,1)
+        #bax = brokenaxes(ylims=((-750, -550),(550, 750)), subplot_spec=sps1)
+        #x = np.linspace(0, 1, 100)
+        #bax.plot(time_steps[1:], np.mean(actions[:,1:],axis=0), label="$\mu(u_t)$")
+        #bax.fill_between(time_steps[1:], np.mean(actions[:,1:],axis=0) - np.std(actions[:,1:],axis=0),
+        #             np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
 
         #fig.tight_layout()
         plt.legend()
 
-        total_steps = (train_itr_res+44)*eps_length*10 if eps_length else None
+        total_steps = (train_itr_res)*eps_length*10 if eps_length else None
         
-
         plt_title = args.plt_title + ' ' + algo_name + '\n'\
         'NN ' + str([net_in_dim, net_shape, net_out_dim]) + '\n' \
         'train R:' + str(r_train) + ' on '+task+',\n'\
-        '' + str(total_steps)+' stps:(' + str(train_itr_res+44) + 'eps*10runs*'+str(eps_length)+'stps)\n' \
-        ''+rew_fn+' with $\\beta=$' + str(beta) + ', $\sigma=$' + str(sigma)
-
+        '' + str(total_steps)+' stps:(' + str(train_itr_res) + 'eps*10runs*'+str(eps_length)+'stps)\n' \
+        ''+rew_fn+' with $\\beta=$' + str(beta) + ', $\sigma=$' + str(sigma) +'\n'\
+        'step_size='+str(step_size)
 
         plt.suptitle(plt_title) # raised title
-
-        directory = "plots/" + args.model
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        plt.savefig(directory  + '.png')
+        if args.not_save_fig == False: 
+            directory = "plots/" + args.model
+            if args.tst_scenario: directory = directory + "_" + args.tst_scenario
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            plt.savefig(directory  + '.png')
         if(args.display):
             matplotlib.use( 'tkagg' )
             plt.show() 
