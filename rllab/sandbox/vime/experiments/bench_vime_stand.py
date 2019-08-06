@@ -37,9 +37,13 @@ if __name__ == "__main__":
                         help='save plot in file')
     parser.add_argument('--deterministic', action="store_true", default=False,
                         help='rollout deterministic')
-    parser.add_argument('--tst_scenario', type=str, default=None,
+    #parser.add_argument('--tst_scenario', type=str, default=None,
+    #                    #choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
+    #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
+    #                    help='test scenario')
+    parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
                         choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
-                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl'],
+                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
                         help='test scenario')
     args = parser.parse_args()
 
@@ -60,7 +64,7 @@ if __name__ == "__main__":
     else:
         print('not disp')
         env.wrapped_env.vis = False
-    n_bench_itr = 20
+    n_bench_itr = 2
     tst_params = ['sine']#, 'chirp', 'step']
     plot_mult_tst_params = True
     plt.rcParams.update({'font.size': 28})
@@ -98,34 +102,39 @@ if __name__ == "__main__":
         print('set eval reward fn sigma to ', env.wrapped_env.sigma)
 
         # Test under different task / goal / transition dyn
-        if args.tst_scenario=="chirp":
+        if "chirp" in args.tst_scenario:
             env.wrapped_env.task = ChirpTask(
                     steps=500, periods=1., offset=0.)
-        elif args.tst_scenario=="step":
+        if "step" in args.tst_scenario:
             env.wrapped_env.task = StepTask(
                     steps=500, periods=1., offset=0.)    
-        elif args.tst_scenario=="larger_deadbands":
+        if "larger_deadbands" in args.tst_scenario:
             env.wrapped_env.test_stand.u_dead_band_min = -750.
             env.wrapped_env.test_stand.u_dead_band_max = -env.wrapped_env.test_stand.u_dead_band_min
-        elif args.tst_scenario=="no_deadbands":
+        if "no_deadbands" in args.tst_scenario:
             env.wrapped_env.test_stand.u_dead_band_min = -0.1
             env.wrapped_env.test_stand.u_dead_band_max = -env.wrapped_env.test_stand.u_dead_band_min
-        elif args.tst_scenario=="lower_height_rate_up":
-            env.wrapped_env.task = SineTask(
-                    steps=500, periods=1., offset=0.)    
+        if "lower_height_rate_up" in args.tst_scenario:
             env.wrapped_env.test_stand.d_h_dot_d_u_up = -1./1300.
             env.wrapped_env.test_stand.d_h_dot_d_u_down = -1./100.#50.
-        elif args.tst_scenario=="greater_height_rate_up":
+        if "greater_height_rate_up" in args.tst_scenario:
             env.wrapped_env.test_stand.d_h_dot_d_u_up = -1./100.
             env.wrapped_env.test_stand.d_h_dot_d_u_down = -1./1500.
         # Add RL on top of LQT controller 
-        elif args.tst_scenario=="learn_lqt_plus_rl":      
+        if "learn_lqt_plus_rl" in args.tst_scenario:      
             env.wrapped_env.learn_lqt_plus_rl = True # If true, do u = LQT(x) + RL(x) 
             env.wrapped_env.lqt_t_lookahead = 5 # Lookahaed time of LQT 
             from solenoid.controls.lqt import LQT
             # TODO set this path with controls module path.
             dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
             env.wrapped_env.lqt = LQT(dynamics_path)
+        # Test on real teststand
+        if "real" in args.tst_scenario:
+            env.wrapped_env.task = SineTask(
+                steps=500, periods=1., offset=0.)    
+            from rllab.sandbox.vime.envs.test_stand import TestStandReal
+            env.wrapped_env.sim = "real"
+            env.wrapped_env.test_stand = TestStandReal(env=env.wrapped_env, use_proxy=env.wrapped_env.use_proxy)
 
 
         #env.wrapped_env.task = SineTask(
@@ -315,14 +324,14 @@ if __name__ == "__main__":
         'train R:' + str(r_train) + ' on '+task+',\n'\
         '' + str(total_steps)+' stps:(' + str(train_itr_res) + 'eps*10runs*'+str(eps_length)+'stps)\n' \
         ''+rew_fn+' with $\\beta=$' + str(beta) + ', $\sigma=$' + str(sigma) +'\n'\
-        'step_size='+str(step_size)+', test: '+args.tst_scenario
+        'step_size='+str(step_size)+', test: '+'+'.join(args.tst_scenario)
 
         plt.suptitle(plt_title) # raised title
         if args.not_save_fig == False: 
             directory = "plots/" + args.model
+            if args.tst_scenario: directory = directory + "_" + '_'.join(args.tst_scenario)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            if args.tst_scenario: directory = directory + "_" + args.tst_scenario
             plt.savefig(directory  + '.png')
         if(args.display):
             matplotlib.use( 'tkagg' )

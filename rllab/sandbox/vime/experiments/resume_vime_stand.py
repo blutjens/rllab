@@ -18,9 +18,9 @@ filename = str(uuid.uuid4())
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', type=str, default="data/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_550_max_900/itr_149.pkl",
+    parser.add_argument('--file', type=str, default="data/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_550_max_1200_lqt_True/itr_20.pkl",
                         help='path to the snapshot file')
-    parser.add_argument('--log_dir', type=str, default="data/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_550_max_900_res",
+    parser.add_argument('--log_dir', type=str, default="data/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_550_max_1200_lqt_True_res",
                         help='path to the new log directory')
     # Look for params.json file
     args = parser.parse_args()

@@ -141,6 +141,7 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         # Init test stand
         self.sim = sim # if true step in forward dyn simulation; if false step on physical test stand
+        self.use_proxy=use_proxy
         if self.sim=="sim":
             self.test_stand = TestStandSim(env=self)
         elif self.sim=="sim_physics":
@@ -174,8 +175,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         """
         # Get state from Test stand
         state = copy.deepcopy(self.test_stand.read_state()) # returns a dict
-
-        state['Height_Rate'] = state['Goal_Height'] = state['Goal_Velocity'] = state['Prev_Action'] = state['Prev_Reward'] #= state['Err'] = 0.
+        state['Height_Rate'] = state['Goal_Height'] = state['Goal_Velocity'] = state['Prev_Action'] = state['Prev_Reward'] = 0. #= state['Err'] = 0.
         state = self._convert_state_dict_to_np_arr(state)
 
         if 'Height_Rate' in state_keys: state = self._get_height_rate(state)  

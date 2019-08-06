@@ -39,21 +39,22 @@ task = SineTask(
 # Params for testing 
 #small_neg_rew=False
 partial_obs = None#'err_only' #'height_only', None
-sim = "sim_physics" # "sim", "real"
+sim = "real" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
 dead_band=550.
-max_action = 900.
+max_action = 1200.#900.
 vis = False
-verbose = False
+verbose = True
+learn_lqt_plus_rl = True
 
 for step_size in [0.005, 0.01, 0.001]:
     for seed in seeds:
         np.random.seed(seed)
         random.seed(seed)
 
-        log_dir="logs_trpo_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f"%(step_size, seed, dead_band,max_action)
+        log_dir="logs_trpo_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
 
         if partial_obs:
             policy_net_size = (2,2)
@@ -69,6 +70,7 @@ for step_size in [0.005, 0.01, 0.001]:
             verbose=verbose, 
             dead_band=dead_band,
             max_action=max_action,
+            learn_lqt_plus_rl=learn_lqt_plus_rl,
             clear_logdir=True,
             log_dir = "runs/"+log_dir
         ))
@@ -86,8 +88,12 @@ for step_size in [0.005, 0.01, 0.001]:
             mdp.spec,
         )
         
-        batch_size = 5000#5000
-        n_itr = 1500
+        if sim=="real":
+            batch_size = 2000#5000
+            n_itr = 100#1500
+        else:
+            batch_size = 5000
+            n_itr = 1500
         algo = TRPO(
             env=mdp,
             policy=policy,
@@ -122,13 +128,10 @@ stub(globals())
 
 # Param ranges
 eta = 0.0001
-# Init env
-timeout = 0.02
 
 # Params for testing 
 #small_neg_rew=False
 partial_obs = None#'err_only' #'height_only', None
-sim = "sim_physics" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
@@ -141,7 +144,7 @@ for step_size in [0.005, 0.01, 0.001]:
         np.random.seed(seed)
         random.seed(seed)
 
-        log_dir="logs_vime_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f"%(step_size, seed, dead_band,max_action)
+        log_dir="logs_vime_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
 
         #reward_fn = lambda state, action, next_state: reward(state, action, next_state)
         mdp_class = StandEnvVime#[SwimmerGatherEnv]
@@ -153,6 +156,7 @@ for step_size in [0.005, 0.01, 0.001]:
             dead_band=dead_band,
             max_action=max_action,
             clear_logdir=True,
+            learn_lqt_plus_rl=learn_lqt_plus_rl,
             log_dir="runs/"+log_dir,
             task=task
             ))

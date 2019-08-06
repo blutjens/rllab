@@ -398,10 +398,16 @@ class TestStandSim(TestStand):
 class TestStandReal(TestStand):
     def __init__(self,
             use_proxy,
-            env
+            env,
+            timestep=0.02,
+            tst=False
         ):
         self._use_proxy = use_proxy
-
+        self.env = env
+        self.timestep = timestep
+        # TODO eliminate this test flag
+        if not tst:
+            assert self.timestep == self.env.timestep # passed timestep and environment timestep should match
         # Init bridge to test stand
         if self._use_proxy:
             self._bridge = ProxyStandBridge()
@@ -420,7 +426,7 @@ class TestStandReal(TestStand):
         Send idle commands to test stand
         """
         self._bridge.send_default_commands()
-        time.sleep(self.timestep)
+        time.sleep(self.env.timestep)
 
     @overrides
     def init_state(self, height=0.55):
@@ -442,7 +448,7 @@ class TestStandReal(TestStand):
             # TODO: Replace this LQR K with eliminated-dead-bands K
             #state = self._convert_state_dict_to_np_arr(state)
             action = np.dot(np.negative(self.K), np.array(state[:state_keys.index("Height_Rate")+1]))
-            state, _, _, _ = self.env.step(action, verbose=False, partial_obs='full')
+            state, _, _, _ = self.env.step(action, partial_obs='full')
 
         # Send default commands to stop test stand from moving
         self._send_default_commands()
@@ -454,7 +460,7 @@ class TestStandReal(TestStand):
         """
         # TODO keep track of time and state in testStandReal class, not env
 
-        # Convert action in current(mA) to duty cycle and ensure its non-negative
+        # Convert action from current(mA) to duty cycle and ensure its non-negative
         up = int(action[0])
         up_cycle = max(up, 0) / constants.max_ma
         down_cycle = max(-up, 0) / constants.max_ma
@@ -486,12 +492,27 @@ class TestStandReal(TestStand):
 
     @overrides
     def read_state(self):
-        return self._bridge.read_state()
+        _state_dict = {key: np.zeros((1,)) for key in constants.state_keys}
+        state_bridge = self._bridge.read_state()
+        for key in state_bridge.keys():
+            _state_dict[key] = state_bridge[key] 
+        return _state_dict
 
     @overrides
     def close(self):
         self._bridge.close()
 
+    def tst(self):
+        # Drive test stand down
+        action = [-1700]
+        up = int(action[0])
+        up_cycle = max(up, 0) / constants.max_ma
+        down_cycle = max(-up, 0) / constants.max_ma
+        self._bridge.send_commands(down_cycle, up_cycle)
+        self._bridge.send_commands(down_cycle, up_cycle)
+    
 if __name__=="__main__":
-    testStand = TestStandSimPhysics(timestep=0.02)
+    #testStand = TestStandSimPhysics(timestep=0.02)
+    testStand = TestStandReal(use_proxy=False, env=None, timestep=0.02, tst=True)
+    #testStand._send_default_commands()
     testStand.tst()
