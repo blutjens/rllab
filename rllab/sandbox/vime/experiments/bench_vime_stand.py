@@ -38,6 +38,8 @@ if __name__ == "__main__":
     parser.add_argument('--deterministic', action="store_true", default=False,
                         help='rollout deterministic')
     parser.add_argument('--tst_scenario', type=str, default=None,
+                        choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
+                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl'],
                         help='test scenario')
     args = parser.parse_args()
 
@@ -50,6 +52,7 @@ if __name__ == "__main__":
     data = joblib.load(model_file)
     policy = data['policy']
     env = data['env']
+    env.log_tb = False # Don't create tensorboard logs during benchmark
     if args.display:
         print('env', env)
         print('settin gvis true')
@@ -115,6 +118,15 @@ if __name__ == "__main__":
         elif args.tst_scenario=="greater_height_rate_up":
             env.wrapped_env.test_stand.d_h_dot_d_u_up = -1./100.
             env.wrapped_env.test_stand.d_h_dot_d_u_down = -1./1500.
+        # Add RL on top of LQT controller 
+        elif args.tst_scenario=="learn_lqt_plus_rl":      
+            env.wrapped_env.learn_lqt_plus_rl = True # If true, do u = LQT(x) + RL(x) 
+            env.wrapped_env.lqt_t_lookahead = 5 # Lookahaed time of LQT 
+            from solenoid.controls.lqt import LQT
+            # TODO set this path with controls module path.
+            dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
+            env.wrapped_env.lqt = LQT(dynamics_path)
+
 
         #env.wrapped_env.task = SineTask(
         #        steps=500, periods=1., offset=0.)
@@ -303,14 +315,14 @@ if __name__ == "__main__":
         'train R:' + str(r_train) + ' on '+task+',\n'\
         '' + str(total_steps)+' stps:(' + str(train_itr_res) + 'eps*10runs*'+str(eps_length)+'stps)\n' \
         ''+rew_fn+' with $\\beta=$' + str(beta) + ', $\sigma=$' + str(sigma) +'\n'\
-        'step_size='+str(step_size)
+        'step_size='+str(step_size)+', test: '+args.tst_scenario
 
         plt.suptitle(plt_title) # raised title
         if args.not_save_fig == False: 
             directory = "plots/" + args.model
-            if args.tst_scenario: directory = directory + "_" + args.tst_scenario
             if not os.path.exists(directory):
                 os.makedirs(directory)
+            if args.tst_scenario: directory = directory + "_" + args.tst_scenario
             plt.savefig(directory  + '.png')
         if(args.display):
             matplotlib.use( 'tkagg' )

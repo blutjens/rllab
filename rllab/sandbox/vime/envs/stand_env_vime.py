@@ -46,6 +46,8 @@ class StandEnvVime(Box2DEnv, Serializable):
                  init_w_lqt=False,
                  dead_band=0.,
                  max_action=None,
+                 learn_lqt_plus_rl=False,
+                 lqt_t_lookahead=5,
                  verbose=True,
                  log_tb=True,
                  log_dir="runs/tst",
@@ -81,7 +83,14 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.init_w_lqt = init_w_lqt # Set actions to: u = LQT(x) + RL(x)
         self.dead_band = dead_band # Scale action space to {[-max_ma, -dead_b],[dead_b, max_ma]}
         self.max_action = max_action
-
+        self.learn_lqt_plus_rl = learn_lqt_plus_rl # If true, do u = LQT(x) + RL(x) 
+        self.lqt_t_lookahead = lqt_t_lookahead # Lookahaed time of LQT 
+        if self.learn_lqt_plus_rl:
+            from solenoid.controls.lqt import LQT
+            # TODO set this path with controls module path.
+            dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
+            self.lqt = LQT(dynamics_path)
+            
         # Define partial observation 
         if self.partial_obs=='height_only':# Set obs to [height_t, goal_height] 
             self.obs_state_ids = [state_keys.index('Height'),state_keys.index('Goal_Height')]
@@ -104,6 +113,9 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         # Tensorboard
         #if log_tb: self.writer = SummaryWriter(logdir="/home/bjoern/Desktop/vector-solenoid/rllab/rllab/sandbox/vime/envs/runs/tst/")#runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
+        self.log_tb = log_tb
+        self.summary_writer = None
+        self.summary = None
         if log_tb:
             # TODO take the line that deletes the logdir out of the code
             if clear_logdir:
@@ -118,9 +130,9 @@ class StandEnvVime(Box2DEnv, Serializable):
         # Log 
         self.data_log = {
             "change_in_act": [0],
-            "reward": []
-         }
-
+            "rewards": []
+        }
+        self.action = None # stores action after postprocessing for external logging
 
         # Keep track of timestep.
         self.t = 0
@@ -267,45 +279,60 @@ class StandEnvVime(Box2DEnv, Serializable):
         """
         Adds log to tensorboard summary
         """
-        print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["reward"])))
+        print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["rewards"])))
         if self.n_i == 1:
             print('ADDING SUMMARY')
-            self.summary.value.add(tag="data/reward", simple_value=np.sum(np.asarray(self.data_log["reward"])))
+            self.summary.value.add(tag="data/reward", simple_value=np.sum(np.asarray(self.data_log["rewards"])))
             self.summary.value.add(tag="data/change_in_act", simple_value=np.mean(np.asarray(self.data_log["change_in_act"][:-2])))
-        if len(self.data_log["reward"]) != 0 and self.n_i > 1: 
+        if len(self.data_log["rewards"]) != 0 and self.n_i > 1: 
             print('self summarvy val', self.summary.value)
-            self.summary.value[0].simple_value = np.sum(np.asarray(self.data_log["reward"]))
+            self.summary.value[0].simple_value = np.sum(np.asarray(self.data_log["rewards"]))
             self.summary.value[1].simple_value = np.mean(np.asarray(self.data_log["change_in_act"][:-2]))
             #self.summary = tf.Summary(value=[
             #tf.Summary.Value(tag="summary_tag", simple_value=value), 
             #])
             self.summary_writer.add_summary(self.summary, int(self.n_i/2))
-            self.data_log["reward"] = []
+            self.data_log["rewards"] = []
 
     def append_log(self, reward):
         """ 
         Add values to local dictionary log
         """
-        self.data_log["reward"].append(reward)
+        self.data_log["rewards"].append(reward)
+
+    def postprocess_action(self, action):
+        """
+        Postprocesses action that is received from algorithm.
+        Input:  action: np.array((1,)); in interval [action_space.low, action_space.hight]
+        Output: action: np.array((1,)); in interval {[action_space.low-self.dead_band],[action_space.high+self.dead_band]}
+        """
+        # Add LQT
+        if self.learn_lqt_plus_rl:
+            goals = np.zeros((self.lqt_t_lookahead))
+            for i in range(self.lqt_t_lookahead):
+                # TODO check of self.t + 1 or not + 0
+                goals[i] = self.task(t=self.t + i)
+            action_lqt = self.lqt(self._prev_state[:state_keys.index('Height_Rate')], goals, self.lqt_t_lookahead)            
+            action = action_lqt + action
+
+        # Rescale dead-band
+        action += np.sign(action) * self.dead_band
+        return action
 
     # ========== Standard functions =============
     def step(self, action, partial_obs=None):
         """Perform a step of the environment"""
         done = self.is_current_done()
 
-        # Rescale dead-band
-        if action >= 0.:
-            action += self.dead_band
-        elif action < 0.:
-            action -= self.dead_band
+        self.action = self.postprocess_action(action)
 
-        self.test_stand.send_action(action, done=done)
+        self.test_stand.send_action(self.action, done=done)
 
         state = self.get_current_obs(partial_obs)
 
-        reward = self.compute_reward(action, done)
+        reward = self.compute_reward(self.action, done)
 
-        self.print_status(action, state, reward)
+        self.print_status(self.action, state, reward)
 
         info = {}
 
@@ -327,7 +354,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         stay (bool): If True, send zero actions and reset to same height as earlier position
                      If False, reset to height specified by param height
         """
-        if create_log: self.log_tensorboard()
+        if create_log and self.summary_writer: self.log_tensorboard()
 
         print('RESET CALLED to height: ', height)
         self._prev_time = time.time()
@@ -452,6 +479,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         else:
             return np.asarray([0])
 
+#==================== For testing ========================
 def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
 
     # Plot states
@@ -503,13 +531,9 @@ def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
       matplotlib.use( 'tkagg' )
       plt.show() 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--keyboard", action="store_true", help="Use keyboard as input")
-    parser.add_argument('--sim', type=str, default="sim_physics",
-                        choices=['sim','sim_physics','real'], help='Name of teststand to run on')
-    parser.add_argument("--display", action="store_true", help="Display plot")
-    args = parser.parse_args()
+def test_optimal_action(args, n_itr, max_time, time_steps, times, start_time, action, rewards, states):
+
+    args.sim = "sym_physics"
 
     dead_band=0.#550.
     max_action = 900.
@@ -519,6 +543,58 @@ def main():
         max_action=max_action,
         timeout=timestep,
         verbose=False)
+
+    d_h_dot_d_u_up = -1./700.
+    periods=2.
+    offset = 0. + np.pi/2. # offset from goal and cosinus
+    t_max = 500.
+    u_dead_band_min = -550.
+    task = tasks.SineTask(
+        steps=t_max, periods=periods, offset=offset, shift_and_scale=False)
+
+    for n_i in range(n_itr):
+        state = env.reset(height=0.55, stay=False)
+        print(state)
+        for t in range(max_time):
+            if args.keyboard:
+                action = np.zeros(shape=1, dtype=np.float32)
+                if keyboard.is_pressed("q"):
+                    action[0] = 1.0
+                elif keyboard.is_pressed("a"):
+                    action[0] = -1.0
+                action = action * 1200
+            else:                
+                delta_goal = np.array([task(t=t+1)], dtype=np.float64) * 2. * np.pi * periods / t_max  # Derivative of goal task : sin(h_offset + 2pi n_periods t/t_max)
+                delta_goal_height = delta_goal * 1./2. * (constants.goal_max - constants.goal_min)  # Derivative of shift and scale of goal task
+                action_incr = 1./d_h_dot_d_u_up * delta_goal_height 
+                action = 1./timestep * action_incr # 1/dt * action
+                if action <= 0.:
+                    action += u_dead_band_min
+                elif action > 0.:
+                    action -= u_dead_band_min
+            state, reward, done, info = copy.deepcopy(env.step(action))
+
+            # For plotting
+            actions[n_i,t] = action[0]
+            for key in constants.state_keys:
+                states[key][n_i, t] = state[constants.state_keys.index(key)]
+            rewards[n_i, t] = reward
+
+        # Measure time per itrs
+        times[n_i] = time.time() - start_time
+        start_time = time.time()
+        print('n_i#', n_i)
+    env.terminate()
+
+    plot_states(time_steps, n_itr, states, actions, times, rewards, args)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--keyboard", action="store_true", help="Use keyboard as input")
+    parser.add_argument('--sim', type=str, default="sim_physics",
+                        choices=['sim','sim_physics','real'], help='Name of teststand to run on')
+    parser.add_argument("--display", action="store_true", help="Display plot")
+    args = parser.parse_args()
 
     n_itr = 5
     max_time = 500
@@ -541,46 +617,33 @@ def main():
       "Prev_Action": np.zeros((n_itr, max_time)),
       "Prev_Reward": np.zeros((n_itr, max_time))
     }
-    d_h_dot_d_u_up = -1./700.
-    periods=2.
-    offset = 0. + np.pi/2. # offset from goal and cosinus
-    t_max = 500.
-    u_dead_band_min = -550.
-    task = tasks.SineTask(
-        steps=t_max, periods=periods, offset=offset, shift_and_scale=False)
+
+    # test_optimal_action(args, n_itr, max_time, time_steps, times, start_time, action, rewards, states)
+    dead_band=550.
+    max_action = 900.
+    timestep = 0.02
+    env = StandEnvVime(sim=args.sim,
+        dead_band=dead_band,
+        max_action=max_action,
+        timeout=timestep,
+        verbose=True,
+        learn_lqt_plus_rl=True)
 
     #_ = input("Enter")
     for n_i in range(n_itr):
         state = env.reset(height=0.55, stay=False)
         print(state)
         for t in range(max_time):
-            if args.keyboard:
-                action = np.zeros(shape=1, dtype=np.float32)
-                if keyboard.is_pressed("q"):
-                    action[0] = 1.0
-                elif keyboard.is_pressed("a"):
-                    action[0] = -1.0
-                action = action * 1200
-            else:
-                #action = env.action_space.sample()
-                
-                delta_goal = np.array([task(t=t+1)], dtype=np.float64) * 2. * np.pi * periods / t_max  # Derivative of goal task : sin(h_offset + 2pi n_periods t/t_max)
-                delta_goal_height = delta_goal * 1./2. * (constants.goal_max - constants.goal_min)  # Derivative of shift and scale of goal task
-                action_incr = 1./d_h_dot_d_u_up * delta_goal_height 
-                action = 1./timestep * action_incr # 1/dt * action
-                if action <= 0.:
-                    action += u_dead_band_min
-                elif action > 0.:
-                    action -= u_dead_band_min
+            action = np.array([0])
             state, reward, done, info = copy.deepcopy(env.step(action))
 
             # For plotting
-            actions[n_i,t] = action[0]
+            actions[n_i,t] = env.action[0] - action[0] # [LQT(x)+RL(x)] - RL(x) 
             for key in constants.state_keys:
                 states[key][n_i, t] = state[constants.state_keys.index(key)]
             rewards[n_i, t] = reward
 
-            #print('reward, done, info', reward, done, info)
+            print('state, reward, done, info', state, reward, done, info)
         # Measure time per itrs
         times[n_i] = time.time() - start_time
         start_time = time.time()

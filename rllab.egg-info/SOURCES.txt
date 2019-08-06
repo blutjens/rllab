@@ -246,6 +246,7 @@ rllab/sandbox/vime/envs/stand_env_vime.py
 rllab/sandbox/vime/envs/test_stand.py
 rllab/sandbox/vime/experiments/__init__.py
 rllab/sandbox/vime/experiments/bench_vime_stand.py
+rllab/sandbox/vime/experiments/plt_change_in_act.py
 rllab/sandbox/vime/experiments/resume_vime_stand.py
 rllab/sandbox/vime/experiments/run_experiment_lite.py
 rllab/sandbox/vime/experiments/run_trpo.py

@@ -4,19 +4,20 @@ import time
 
 
 def rollout(env, agent, max_path_length=np.inf, animated=False, speedup=1,
-            always_return_paths=False):
+            always_return_paths=False, deterministic=False):
     observations = []
     actions = []
     rewards = []
     agent_infos = []
     env_infos = []
-    o = env.reset()
+    o = env.wrapped_env.reset(create_log=False)
     agent.reset()
     path_length = 0
     if animated:
         env.render()
     while path_length < max_path_length:
         a, agent_info = agent.get_action(o)
+        if deterministic: a = agent_info["mean"]
         next_o, r, d, env_info = env.step(a)
         observations.append(env.observation_space.flatten(o))
         rewards.append(r)
@@ -36,7 +37,7 @@ def rollout(env, agent, max_path_length=np.inf, animated=False, speedup=1,
         return
 
     # Reset environment at the end s.t. teststand doesn't collide.
-    print('Calling reset at the end of episode from rllab/sampler/utils.py')
+    # print('We should call reset at the end of episode from rllab/sampler/utils.py, s.t. teststand doesnt collide')
     env.reset()
     
     return dict(
