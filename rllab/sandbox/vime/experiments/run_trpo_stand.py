@@ -44,17 +44,17 @@ sim = "real" # "sim", "real"
 #t_past=0
 #init_w_lqt=False
 dead_band=550.
-max_action = 1200.#900.
+max_action = 1700.#900.
 vis = False
 verbose = True
-learn_lqt_plus_rl = True
+learn_lqt_plus_rl = False
 
 for step_size in [0.005, 0.01, 0.001]:
     for seed in seeds:
         np.random.seed(seed)
         random.seed(seed)
 
-        log_dir="logs_trpo_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
+        log_dir="logs_trpo_%s_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(sim, step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
 
         if partial_obs:
             policy_net_size = (2,2)
@@ -88,12 +88,8 @@ for step_size in [0.005, 0.01, 0.001]:
             mdp.spec,
         )
         
-        if sim=="real":
-            batch_size = 2000#5000
-            n_itr = 100#1500
-        else:
-            batch_size = 5000
-            n_itr = 1500
+        batch_size = 5000
+        n_itr = 300#1500
         algo = TRPO(
             env=mdp,
             policy=policy,
@@ -144,7 +140,7 @@ for step_size in [0.005, 0.01, 0.001]:
         np.random.seed(seed)
         random.seed(seed)
 
-        log_dir="logs_vime_sim_physics_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
+        log_dir="logs_vime_%s_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(sim, step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
 
         #reward_fn = lambda state, action, next_state: reward(state, action, next_state)
         mdp_class = StandEnvVime#[SwimmerGatherEnv]
@@ -174,8 +170,8 @@ for step_size in [0.005, 0.01, 0.001]:
         )
 
         plot = False
-        batch_size = 5000#5000
-        n_itr = 2000#150
+        #batch_size = 5000#5000
+        #n_itr = 2000#150
         algo = Trpo_vime(
             env=mdp,
             policy=policy,

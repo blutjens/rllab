@@ -434,22 +434,20 @@ class TestStandReal(TestStand):
         Moves test stand to initial position
         """
         self._send_default_commands()
-        #state = self._convert_state_dict_to_np_arr(copy.deepcopy(self._get_raw_obs_in_dict()))
         state = self.env.get_raw_obs()
         if self._use_proxy:
             state[state_keys.index('Height')] = height
 
-        # TODO change max init steps back to 100
         max_init_steps = 100
-        for i in range(max_init_steps):
+        i = 0
+        while (100*state[state_keys.index('Height')]).astype(int) != np.array([100*height]).astype(int) and i < max_init_steps:
             # Compute error in current height and desired setpoint
             state[state_keys.index('Height')] = state[state_keys.index('Height')] - height
             # Drive error in height to zero
             # TODO: Replace this LQR K with eliminated-dead-bands K
-            #state = self._convert_state_dict_to_np_arr(state)
             action = np.dot(np.negative(self.K), np.array(state[:state_keys.index("Height_Rate")+1]))
             state, _, _, _ = self.env.step(action, partial_obs='full')
-
+            i += 1
         # Send default commands to stop test stand from moving
         self._send_default_commands()
 

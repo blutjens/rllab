@@ -1,0 +1,127 @@
+{
+  "args_data": "gASVXwUAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjARyZWFslIwDdmlzlImMB3ZlcmJvc2WUiIwJZGVhZF9iYW5klEdAgTAAAAAAAIwKbWF4X2FjdGlvbpRHQJqQAAAAAACMDGNsZWFyX2xvZ2RpcpSIjBFsZWFybl9scXRfcGx1c19ybJSJjAdsb2dfZGlylIw+cnVucy9sb2dzX3ZpbWVfcmVhbF9zdF9zel8wLjAxMF9zZF8wX2RiXzU1MF9tYXhfMTcwMF9scXRfRmFsc2WUjAR0YXNrlGgHKYGUfZQoaAopaAt9lCiMBXN0ZXBzlE30AYwHcGVyaW9kc5RHP/AAAAAAAACMBm9mZnNldJRHAAAAAAAAAAB1jAtwcm94eV9jbGFzc5SME3NvbGVub2lkLm1pc2MudGFza3OUjAhTaW5lVGFza5STlHVidWgmjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gmjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoJowicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGg0aDYpgZR9lChoOWgOaDpoO3Vic2gmjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylEtkjAlzdGVwX3NpemWURz+EeuFHrhR7jANldGGURz8aNuLrHEMtjA1zbm5fbl9zYW1wbGVzlEsKjBBzdWJzYW1wbGVfZmFjdG9ylEc/8AAAAAAAAIwPdXNlX3JlcGxheV9wb29slIiMDHVzZV9rbF9yYXRpb5SIjA51c2Vfa2xfcmF0aW9fcZSIjAxuX2l0cl91cGRhdGWUSwGMDWtsX2JhdGNoX3NpemWUSwGMEG5vcm1hbGl6ZV9yZXdhcmSUiYwQcmVwbGF5X3Bvb2xfc2l6ZZRKQEIPAIwUbl91cGRhdGVzX3Blcl9zYW1wbGWUTYgTjBNzZWNvbmRfb3JkZXJfdXBkYXRllIiMDHVubl9uX2hpZGRlbpRdlEsgYYwPdW5uX2xheWVyc190eXBllF2UKEsBSwFljARwbG90lImMEXVubl9sZWFybmluZ19yYXRllEc/Gjbi6xxDLYwIYW5pbWF0ZWSUiXVoJowicmxsYWIuc2FuZGJveC52aW1lLmFsZ29zLnRycG9fZXhwbJSMBFRSUE+Uk5R1YowFdHJhaW6UKX2UdJSMCF9fa3dhcmdzlH2UdWIu",
+  "exp_name": "vime-stand_2019_08_07_21_21_28_0005",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.sandbox.vime.algos.trpo_expl.TRPO",
+      "animated": false,
+      "batch_size": 5000,
+      "eta": 0.0001,
+      "kl_batch_size": 1,
+      "max_path_length": 500,
+      "n_itr": 100,
+      "n_itr_update": 1,
+      "n_updates_per_sample": 5000,
+      "normalize_reward": false,
+      "plot": false,
+      "replay_pool_size": 1000000,
+      "second_order_update": true,
+      "snn_n_samples": 10,
+      "step_size": 0.01,
+      "subsample_factor": 1.0,
+      "unn_layers_type": [
+        1,
+        1
+      ],
+      "unn_learning_rate": 0.0001,
+      "unn_n_hidden": [
+        32
+      ],
+      "use_kl_ratio": true,
+      "use_kl_ratio_q": true,
+      "use_replay_pool": true,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 550.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_vime_real_st_sz_0.010_sd_0_db_550_max_1700_lqt_False",
+            "max_action": 1700.0,
+            "sim": "real",
+            "task": {
+              "_name": "solenoid.misc.tasks.SineTask",
+              "offset": 0.0,
+              "periods": 1.0,
+              "steps": 500
+            },
+            "timeout": 0.02,
+            "verbose": true,
+            "vis": false
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+        "clear_logdir": true,
+        "dead_band": 550.0,
+        "learn_lqt_plus_rl": false,
+        "log_dir": "runs/logs_vime_real_st_sz_0.010_sd_0_db_550_max_1700_lqt_False",
+        "max_action": 1700.0,
+        "sim": "real",
+        "task": {
+          "_name": "solenoid.misc.tasks.SineTask",
+          "offset": 0.0,
+          "periods": 1.0,
+          "steps": 500
+        },
+        "timeout": 0.02,
+        "verbose": true,
+        "vis": false
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 550.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_vime_real_st_sz_0.010_sd_0_db_550_max_1700_lqt_False",
+            "max_action": 1700.0,
+            "sim": "real",
+            "task": {
+              "_name": "solenoid.misc.tasks.SineTask",
+              "offset": 0.0,
+              "periods": 1.0,
+              "steps": 500
+            },
+            "timeout": 0.02,
+            "verbose": true,
+            "vis": false
+          }
+        }
+      },
+      "hidden_sizes": [
+        64,
+        32
+      ]
+    }
+  },
+  "log_dir": "data/logs_vime_real_st_sz_0.010_sd_0_db_550_max_1700_lqt_False",
+  "log_tabular_only": false,
+  "n_parallel": 1,
+  "params_log_file": "params.json",
+  "plot": false,
+  "resume_from": null,
+  "seed": 0,
+  "sim": "real",
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}

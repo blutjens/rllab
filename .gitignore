@@ -12,23 +12,23 @@ build
 build_linux
 .idea
 .sublime-project
-run_experiment.sh
+# run_experiment.sh
 scratch-notebooks
 launch_scripts
 *.sh.e*
 *.sh.o*
 MUJOCO_LOG.TXT
-vendor/mujoco
+# vendor/mujoco
 .project
 .pydevproject
-*.pdf
-.env
+# *.pdf
+# .env
 snippets
 private
 lua
 iterate.dat
-.env
-src/
+# .env
+# src/
 .settings
 .pods
 docs/_build
