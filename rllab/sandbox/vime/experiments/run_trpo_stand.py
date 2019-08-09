@@ -24,7 +24,7 @@ stub(globals())
 import atexit
 
 # Param ranges
-seeds = range(1)
+seeds = [1]#range(1)
 # Init env
 timeout = 0.02
 
@@ -40,11 +40,11 @@ sim = "sim_physics"#"real" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
-dead_band=0.#550.
-max_action = 900. #1700.
+dead_band=550.
+max_action = 1700.#1700.#900.
 vis = False
-verbose = False
-learn_lqt_plus_rl = False
+verbose = True
+learn_lqt_plus_rl = True
 
 for step_size in [0.005, 0.01, 0.001]:
     for seed in seeds:
@@ -52,6 +52,7 @@ for step_size in [0.005, 0.01, 0.001]:
         random.seed(seed)
 
         log_dir="logs_trpo_%s_st_sz_%.3f_sd_%d_db_%03.0f_max_%3.0f_lqt_%r"%(sim, step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
+
         if partial_obs:
             policy_net_size = (2,2)
         else:
@@ -85,7 +86,7 @@ for step_size in [0.005, 0.01, 0.001]:
         )
         
         batch_size = 5000
-        n_itr = 300#1500
+        n_itr = 150#1500
         algo = TRPO(
             env=mdp,
             policy=policy,
