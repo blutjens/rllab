@@ -42,7 +42,7 @@ if __name__ == "__main__":
     #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
     #                    help='test scenario')
     parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
-                        choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
+                        choices=['sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
                         'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
                         help='test scenario')
     args = parser.parse_args()
@@ -102,6 +102,9 @@ if __name__ == "__main__":
         print('set eval reward fn sigma to ', env.wrapped_env.sigma)
 
         # Test under different task / goal / transition dyn
+        if "sine" in args.tst_scenario:
+            env.wrapped_env.task = SineTask(
+                steps=500, periods=1., offset=0.)    
         if "chirp" in args.tst_scenario:
             env.wrapped_env.task = ChirpTask(
                     steps=500, periods=1., offset=0.)
@@ -130,8 +133,6 @@ if __name__ == "__main__":
             env.wrapped_env.lqt = LQT(dynamics_path)
         # Test on real teststand
         if "real" in args.tst_scenario:
-            env.wrapped_env.task = SineTask(
-                steps=500, periods=1., offset=0.)    
             from rllab.sandbox.vime.envs.test_stand import TestStandReal
             env.wrapped_env.sim = "real"
             env.wrapped_env.test_stand = TestStandReal(env=env.wrapped_env, use_proxy=env.wrapped_env.use_proxy)
@@ -254,7 +255,9 @@ if __name__ == "__main__":
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
             plt_i += 1
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.plot(time_steps[1:], actions[b_i,1:], '-', label="$u_t$")
+            #ax.plot(time_steps[1:], actions[b_i,1:], '-', label="$u_t$")
+            ax.plot(time_steps[:], 550*np.ones(args.max_path_length), '--', color="black", label="$u_{db, env}$")
+            ax.plot(time_steps[:], -550*np.ones(args.max_path_length), '--', color="black")
             ax.set_ylabel('$u_t$ in $mA$')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
             plt_i += 1

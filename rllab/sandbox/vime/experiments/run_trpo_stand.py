@@ -6,11 +6,8 @@ os.environ["THEANO_FLAGS"] = "device=cpu"
 #from rllab.sandbox.vime.envs.cartpole_swingup_env_x import CartpoleSwingupEnvX
 #from rllab.envs.box2d.mountain_car_env import MountainCarEnv
 #from rllab.envs.mujoco.gather.swimmer_gather_env import SwimmerGatherEnv
-#import sys
-#sys.path.append("..") # Adds higher directory to python modules path.
 
 from rllab.sandbox.vime.envs.stand_env_vime import StandEnvVime
-#from envs.stand_env_vime import StandEnvVime
 
 
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
@@ -39,14 +36,14 @@ task = SineTask(
 # Params for testing 
 #small_neg_rew=False
 partial_obs = None#'err_only' #'height_only', None
-sim = "real" # "sim", "real"
+sim = "sim_physics"#"real" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
-dead_band=550.
-max_action = 1700.#900.
+dead_band=0.#550.
+max_action = 900. #1700.
 vis = False
-verbose = True
+verbose = False
 learn_lqt_plus_rl = False
 
 for step_size in [0.005, 0.01, 0.001]:
@@ -54,8 +51,7 @@ for step_size in [0.005, 0.01, 0.001]:
         np.random.seed(seed)
         random.seed(seed)
 
-        log_dir="logs_trpo_%s_st_sz_%.3f_sd_%d_db_%3.0f_max_%3.0f_lqt_%r"%(sim, step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
-
+        log_dir="logs_trpo_%s_st_sz_%.3f_sd_%d_db_%03.0f_max_%3.0f_lqt_%r"%(sim, step_size, seed, dead_band,max_action, learn_lqt_plus_rl)
         if partial_obs:
             policy_net_size = (2,2)
         else:
@@ -116,6 +112,8 @@ for step_size in [0.005, 0.01, 0.001]:
             plot=False,
             script="rllab/sandbox/vime/experiments/run_experiment_lite.py"
         )
+        import sys
+        sys.exit()
 ## VIME
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from rllab.sandbox.vime.algos.trpo_expl import TRPO as Trpo_vime

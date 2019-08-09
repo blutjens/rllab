@@ -510,7 +510,7 @@ class TestStandReal(TestStand):
         self._bridge.send_commands(down_cycle, up_cycle)
     
 if __name__=="__main__":
-    #testStand = TestStandSimPhysics(timestep=0.02)
-    testStand = TestStandReal(use_proxy=False, env=None, timestep=0.02, tst=True)
+    testStand = TestStandSimPhysics(timestep=0.02)
+    #testStand = TestStandReal(use_proxy=False, env=None, timestep=0.02, tst=True)
     #testStand._send_default_commands()
     testStand.tst()
