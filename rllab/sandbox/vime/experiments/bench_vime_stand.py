@@ -2,6 +2,7 @@ import argparse
 
 import joblib
 import tensorflow as tf
+import tqdm 
 
 from rllab.misc.console import query_yes_no
 from rllab.sampler.utils import rollout
@@ -37,18 +38,15 @@ if __name__ == "__main__":
                         help='save plot in file')
     parser.add_argument('--deterministic', action="store_true", default=False,
                         help='average over multiple deterministic rollouts')
+    parser.add_argument('--n_eval_eps', type=int, default=1,
+                        help='number of evaluation episodes')
     #parser.add_argument('--tst_scenario', type=str, default=None,
     #                    #choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
     #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
     #                    help='test scenario')
     parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
-<<<<<<< HEAD
                         choices=['train', 'sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
                         'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real', 'just_lqt'],
-=======
-                        choices=['sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
-                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
->>>>>>> b076cfb4c25f4841c91cc94237e88d5600b923dd
                         help='test scenario')
     args = parser.parse_args()
 
@@ -71,7 +69,7 @@ if __name__ == "__main__":
     else:
         print('not disp')
         env.wrapped_env.vis = False
-    n_bench_itr = 10
+    n_eval_eps = args.n_eval_eps
     tst_params = ['sine']#, 'chirp', 'step']
     plot_mult_tst_params = True
     plt.rcParams.update({'font.size': 28})
@@ -159,23 +157,20 @@ if __name__ == "__main__":
         env.wrapped_env.just_lqt = just_lqt
         if just_lqt: algo_name = 'LQT'
 
-        #env.wrapped_env.task = SineTask(
-        #        steps=500, periods=1., offset=0.)
-
-        mcae_scores = np.zeros(n_bench_itr)
-        cum_rews = np.zeros(n_bench_itr)
-        mcse_scores = np.zeros(n_bench_itr)
-        heights = np.zeros((n_bench_itr, args.max_path_length))
-        goals = np.zeros((n_bench_itr, args.max_path_length))
-        actions = np.zeros((n_bench_itr, args.max_path_length))
-        actions_rl = np.zeros((n_bench_itr, args.max_path_length))
-        postprocessed_actions = np.zeros((n_bench_itr, args.max_path_length))
+        mcae_scores = np.zeros(n_eval_eps)
+        cum_rews = np.zeros(n_eval_eps)
+        mcse_scores = np.zeros(n_eval_eps)
+        heights = np.zeros((n_eval_eps, args.max_path_length))
+        goals = np.zeros((n_eval_eps, args.max_path_length))
+        actions = np.zeros((n_eval_eps, args.max_path_length))
+        actions_rl = np.zeros((n_eval_eps, args.max_path_length))
+        postprocessed_actions = np.zeros((n_eval_eps, args.max_path_length))
         if env.wrapped_env.learn_lqt_plus_rl: 
-            actions_lqt = np.zeros((n_bench_itr, args.max_path_length)) 
-        rewards = np.zeros((n_bench_itr, args.max_path_length))
-        change_in_actions = np.zeros((n_bench_itr))
+            actions_lqt = np.zeros((n_eval_eps, args.max_path_length)) 
+        rewards = np.zeros((n_eval_eps, args.max_path_length))
+        change_in_actions = np.zeros((n_eval_eps))
         act_std_dev = np.zeros((args.max_path_length-1)) 
-        for b_i in range(n_bench_itr):
+        for b_i in tqdm(range(n_eval_eps)):
 
             # Execute and log 
             path = rollout(env, policy, max_path_length=args.max_path_length,
@@ -192,22 +187,13 @@ if __name__ == "__main__":
             cum_rews[b_i] = np.sum(np.array(rewards[b_i,:]))
             time_steps = np.arange(args.max_path_length)#np.arange(state['Height'].shape[0])#np.zeros((args.max_path_length))#
             # Get env params
-            print('ts', time_steps.shape)
-            print('rew', rewards.shape)
             timeout = env.wrapped_env.timestep
 
             # Scale actions to [-max_ma, max_ma], as calculated in rllab->rllab->envs->normalized_env.py->step()
             lb, ub = env.wrapped_env.action_space.bounds
-            print('action bnd', lb, ub)
-            print('actions', actions[b_i,:10])
             actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
             actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
             actions_rl[b_i,:] = actions[b_i,:]
-            print('actions', actions[b_i, :10])
-            #print('takena ct', path['env_infos'])
-            #print('takena ct', path['env_infos']['taken_action'])
-            print('takena ct', path['env_infos']['taken_action'].shape)
-            print('takena ct', path['env_infos']['taken_action'][:10].reshape((10,)))
             postprocessed_actions[b_i,:] = path['env_infos']['taken_action'][:].reshape((path['env_infos']['taken_action'].shape[0],))
             if env.wrapped_env.learn_lqt_plus_rl: 
                 act_rl_plus_lqt_minus_db = postprocessed_actions[b_i,:] - np.sign(postprocessed_actions[b_i,:])*dead_band
@@ -218,15 +204,11 @@ if __name__ == "__main__":
             #Convert to shape [episodes *time * number of height dimensions] for metric computation
             achieved_heights = np.expand_dims(np.expand_dims(np.array(heights[b_i,:]).T,axis=0),axis=2)
             target_heights = np.expand_dims(np.expand_dims(np.array(goals[b_i,:]).T, axis = 0),axis=2)
-            print('ach h', achieved_heights.shape)
-            print('target-H', target_heights.shape)
-            #Compute score according to Mean Cumulative Absolute Error 
-            #if(metric == 'MCAE'):
+            #Compute score according to Mean Cumulative Absolute Errors            
             mcae_scores[b_i] = mean_cumulative_absolute_error(achieved_heights, target_heights, weights=None)
             if(args.display):
                 print('MCAE :',mcae_scores[b_i])
 
-            #elif(metric == 'MCSE'):
             mcse_scores[b_i] = mean_cumulative_squared_error(achieved_heights,target_heights,weights=None)
             if(args.display):
                 print('MCSE :',mcse_scores[b_i])
@@ -238,13 +220,13 @@ if __name__ == "__main__":
         #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) < (550.-dead_band), 0., actions[b_i,:])#+dead_band*np.sign(actions[b_i,:]))
         #actions[b_i,:] = np.where(np.abs(actions[b_i,:]) > (900.-dead_band), 900.-dead_band, actions[b_i,:])
 
-        if plot_mult_tst_params and b_i==n_bench_itr-1:
+        if plot_mult_tst_params and b_i==n_eval_eps-1:
             # Plot mean and variance of states over runs
             plt_i = 0
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
             ax.title.set_text('Averaged over $%d$ itr, MCAE: $%.4f\pm%.3f$, \n MCSE $%.4f\pm%.3f$, Rew: $%.2f\pm%.3f$, Det.Pol.: %r\n'\
                 '$\Delta u:%.3f\pm%.2fmA$, $\sigma(u_t): %.3f\pm%.3fmA$'%(
-                n_bench_itr, np.mean(mcae_scores), np.std(mcae_scores),
+                n_eval_eps, np.mean(mcae_scores), np.std(mcae_scores),
                 np.mean(mcse_scores), np.std(mcse_scores),
                 np.mean(cum_rews), np.std(cum_rews),
                 args.deterministic,
@@ -346,7 +328,7 @@ if __name__ == "__main__":
                 ax.legend()
 
 
-        elif b_i==n_bench_itr-1:
+        elif b_i==n_eval_eps-1:
             print('not plotting mult test param')
             fig, ax = plt.subplots(nrows=2, ncols=1)
             
@@ -386,6 +368,3 @@ if __name__ == "__main__":
         if(args.display):
             matplotlib.use( 'tkagg' )
             plt.show() 
-
-        #if not query_yes_no('Continue simulation?'):
-        #    break

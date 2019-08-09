@@ -24,7 +24,7 @@ stub(globals())
 import atexit
 
 # Param ranges
-seeds = [2]#range(1)
+seeds = [0]#range(1)
 # Init env
 timeout = 0.02
 
@@ -36,7 +36,7 @@ task = SineTask(
 # Params for testing 
 #small_neg_rew=False
 partial_obs = None#'err_only' #'height_only', None
-sim = "sim_physics"#"real" # "sim", "real"
+sim = "real"#"real" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
@@ -44,8 +44,12 @@ dead_band=550.
 max_action = 1700.#1700.#900.
 vis = False
 verbose = True
-learn_lqt_plus_rl = True
+learn_lqt_plus_rl = False
+        
+batch_size = 5000
+n_itr = 200#150#1500
 
+"""
 for step_size in [0.005, 0.01, 0.001]:
     for seed in seeds:
         np.random.seed(seed)
@@ -85,9 +89,6 @@ for step_size in [0.005, 0.01, 0.001]:
         baseline = LinearFeatureBaseline(
             mdp.spec,
         )
-        
-        batch_size = 5000
-        n_itr = 150#1500
         algo = TRPO(
             env=mdp,
             policy=policy,
@@ -116,6 +117,8 @@ for step_size in [0.005, 0.01, 0.001]:
         )
         import sys
         sys.exit()
+
+"""
 ## VIME
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from rllab.sandbox.vime.algos.trpo_expl import TRPO as Trpo_vime
@@ -134,6 +137,7 @@ partial_obs = None#'err_only' #'height_only', None
 #elim_dead_bands=False
 
 seeds = range(1)#range(5)
+
 
 for step_size in [0.005, 0.01, 0.001]:
     for seed in seeds:
@@ -170,8 +174,7 @@ for step_size in [0.005, 0.01, 0.001]:
         )
 
         plot = False
-        #batch_size = 5000#5000
-        #n_itr = 2000#150
+
         algo = Trpo_vime(
             env=mdp,
             policy=policy,

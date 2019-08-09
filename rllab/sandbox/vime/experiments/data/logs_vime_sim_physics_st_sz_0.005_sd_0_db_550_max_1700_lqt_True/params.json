@@ -1,6 +1,6 @@
 {
-  "args_data": "gASVXwUAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjARyZWFslIwDdmlzlImMB3ZlcmJvc2WUiIwJZGVhZF9iYW5klEdAgTAAAAAAAIwKbWF4X2FjdGlvbpRHQJqQAAAAAACMDGNsZWFyX2xvZ2RpcpSIjBFsZWFybl9scXRfcGx1c19ybJSJjAdsb2dfZGlylIw+cnVucy9sb2dzX3ZpbWVfcmVhbF9zdF9zel8wLjAwNV9zZF8wX2RiXzU1MF9tYXhfMTcwMF9scXRfRmFsc2WUjAR0YXNrlGgHKYGUfZQoaAopaAt9lCiMBXN0ZXBzlE30AYwHcGVyaW9kc5RHP/AAAAAAAACMBm9mZnNldJRHAAAAAAAAAAB1jAtwcm94eV9jbGFzc5SME3NvbGVub2lkLm1pc2MudGFza3OUjAhTaW5lVGFza5STlHVidWgmjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gmjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoJowicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGg0aDYpgZR9lChoOWgOaDpoO3Vic2gmjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylEvIjAlzdGVwX3NpemWURz90euFHrhR7jANldGGURz8aNuLrHEMtjA1zbm5fbl9zYW1wbGVzlEsKjBBzdWJzYW1wbGVfZmFjdG9ylEc/8AAAAAAAAIwPdXNlX3JlcGxheV9wb29slIiMDHVzZV9rbF9yYXRpb5SIjA51c2Vfa2xfcmF0aW9fcZSIjAxuX2l0cl91cGRhdGWUSwGMDWtsX2JhdGNoX3NpemWUSwGMEG5vcm1hbGl6ZV9yZXdhcmSUiYwQcmVwbGF5X3Bvb2xfc2l6ZZRKQEIPAIwUbl91cGRhdGVzX3Blcl9zYW1wbGWUTYgTjBNzZWNvbmRfb3JkZXJfdXBkYXRllIiMDHVubl9uX2hpZGRlbpRdlEsgYYwPdW5uX2xheWVyc190eXBllF2UKEsBSwFljARwbG90lImMEXVubl9sZWFybmluZ19yYXRllEc/Gjbi6xxDLYwIYW5pbWF0ZWSUiXVoJowicmxsYWIuc2FuZGJveC52aW1lLmFsZ29zLnRycG9fZXhwbJSMBFRSUE+Uk5R1YowFdHJhaW6UKX2UdJSMCF9fa3dhcmdzlH2UdWIu",
-  "exp_name": "vime-stand_2019_08_09_19_17_28_0001",
+  "args_data": "gASVbAUAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjAtzaW1fcGh5c2ljc5SMA3Zpc5SJjAd2ZXJib3NllIiMCWRlYWRfYmFuZJRHQIEwAAAAAACMCm1heF9hY3Rpb26UR0CakAAAAAAAjAxjbGVhcl9sb2dkaXKUiIwRbGVhcm5fbHF0X3BsdXNfcmyUiIwHbG9nX2RpcpSMRHJ1bnMvbG9nc192aW1lX3NpbV9waHlzaWNzX3N0X3N6XzAuMDA1X3NkXzBfZGJfNTUwX21heF8xNzAwX2xxdF9UcnVllIwEdGFza5RoBymBlH2UKGgKKWgLfZQojAVzdGVwc5RN9AGMB3BlcmlvZHOURz/wAAAAAAAAjAZvZmZzZXSURwAAAAAAAAAAdYwLcHJveHlfY2xhc3OUjBNzb2xlbm9pZC5taXNjLnRhc2tzlIwIU2luZVRhc2uUk5R1YnVoJowmcmxsYWIuc2FuZGJveC52aW1lLmVudnMuc3RhbmRfZW52X3ZpbWWUjAxTdGFuZEVudlZpbWWUk5R1YnNoJowZcmxsYWIuZW52cy5ub3JtYWxpemVkX2VudpSMDU5vcm1hbGl6ZWRFbnaUk5R1YowGcG9saWN5lGgHKYGUfZQoaAopaAt9lCiMCGVudl9zcGVjlGgAjAhTdHViQXR0cpSTlCmBlH2UKIwEX29iapRoDowKX2F0dHJfbmFtZZSMBHNwZWOUdWKMDGhpZGRlbl9zaXplc5RLQEsghpR1aCaMInJsbGFiLnBvbGljaWVzLmdhdXNzaWFuX21scF9wb2xpY3mUjBFHYXVzc2lhbk1MUFBvbGljeZSTlHVijAhiYXNlbGluZZRoBymBlH2UKGgKKWgLfZRoNGg2KYGUfZQoaDloDmg6aDt1YnNoJowncmxsYWIuYmFzZWxpbmVzLmxpbmVhcl9mZWF0dXJlX2Jhc2VsaW5llIwVTGluZWFyRmVhdHVyZUJhc2VsaW5llJOUdWKMCmJhdGNoX3NpemWUTYgTjAt3aG9sZV9wYXRoc5SIjA9tYXhfcGF0aF9sZW5ndGiUTfQBjAVuX2l0cpRLyIwJc3RlcF9zaXpllEc/dHrhR64Ue4wDZXRhlEc/Gjbi6xxDLYwNc25uX25fc2FtcGxlc5RLCowQc3Vic2FtcGxlX2ZhY3RvcpRHP/AAAAAAAACMD3VzZV9yZXBsYXlfcG9vbJSIjAx1c2Vfa2xfcmF0aW+UiIwOdXNlX2tsX3JhdGlvX3GUiIwMbl9pdHJfdXBkYXRllEsBjA1rbF9iYXRjaF9zaXpllEsBjBBub3JtYWxpemVfcmV3YXJklImMEHJlcGxheV9wb29sX3NpemWUSkBCDwCMFG5fdXBkYXRlc19wZXJfc2FtcGxllE2IE4wTc2Vjb25kX29yZGVyX3VwZGF0ZZSIjAx1bm5fbl9oaWRkZW6UXZRLIGGMD3Vubl9sYXllcnNfdHlwZZRdlChLAUsBZYwEcGxvdJSJjBF1bm5fbGVhcm5pbmdfcmF0ZZRHPxo24uscQy2MCGFuaW1hdGVklIl1aCaMInJsbGFiLnNhbmRib3gudmltZS5hbGdvcy50cnBvX2V4cGyUjARUUlBPlJOUdWKMBXRyYWlulCl9lHSUjAhfX2t3YXJnc5R9lHViLg==",
+  "exp_name": "vime-stand_2019_08_09_19_13_08_0001",
   "json_args": {
     "algo": {
       "_name": "rllab.sandbox.vime.algos.trpo_expl.TRPO",
@@ -42,10 +42,10 @@
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "clear_logdir": true,
             "dead_band": 550.0,
-            "learn_lqt_plus_rl": false,
-            "log_dir": "runs/logs_vime_real_st_sz_0.005_sd_0_db_550_max_1700_lqt_False",
+            "learn_lqt_plus_rl": true,
+            "log_dir": "runs/logs_vime_sim_physics_st_sz_0.005_sd_0_db_550_max_1700_lqt_True",
             "max_action": 1700.0,
-            "sim": "real",
+            "sim": "sim_physics",
             "task": {
               "_name": "solenoid.misc.tasks.SineTask",
               "offset": 0.0,
@@ -65,10 +65,10 @@
         "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
         "clear_logdir": true,
         "dead_band": 550.0,
-        "learn_lqt_plus_rl": false,
-        "log_dir": "runs/logs_vime_real_st_sz_0.005_sd_0_db_550_max_1700_lqt_False",
+        "learn_lqt_plus_rl": true,
+        "log_dir": "runs/logs_vime_sim_physics_st_sz_0.005_sd_0_db_550_max_1700_lqt_True",
         "max_action": 1700.0,
-        "sim": "real",
+        "sim": "sim_physics",
         "task": {
           "_name": "solenoid.misc.tasks.SineTask",
           "offset": 0.0,
@@ -90,10 +90,10 @@
             "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
             "clear_logdir": true,
             "dead_band": 550.0,
-            "learn_lqt_plus_rl": false,
-            "log_dir": "runs/logs_vime_real_st_sz_0.005_sd_0_db_550_max_1700_lqt_False",
+            "learn_lqt_plus_rl": true,
+            "log_dir": "runs/logs_vime_sim_physics_st_sz_0.005_sd_0_db_550_max_1700_lqt_True",
             "max_action": 1700.0,
-            "sim": "real",
+            "sim": "sim_physics",
             "task": {
               "_name": "solenoid.misc.tasks.SineTask",
               "offset": 0.0,
@@ -112,14 +112,14 @@
       ]
     }
   },
-  "log_dir": "data/logs_vime_real_st_sz_0.005_sd_0_db_550_max_1700_lqt_False",
+  "log_dir": "data/logs_vime_sim_physics_st_sz_0.005_sd_0_db_550_max_1700_lqt_True",
   "log_tabular_only": false,
   "n_parallel": 1,
   "params_log_file": "params.json",
   "plot": false,
   "resume_from": null,
   "seed": 0,
-  "sim": "real",
+  "sim": "sim_physics",
   "snapshot_mode": "all",
   "tabular_log_file": "progress.csv",
   "text_log_file": "debug.log",

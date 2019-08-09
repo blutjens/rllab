@@ -414,12 +414,8 @@ class StandEnvVime(Box2DEnv, Serializable):
         print('env terminate called')
         self.reset(height=0.75)
 
-        # Print and save log
-<<<<<<< HEAD
+        # Clear log
         #self.summary_writer.flush()
-=======
-        # self.summary_writer.flush()
->>>>>>> b076cfb4c25f4841c91cc94237e88d5600b923dd
 
         self.test_stand.close()
 
