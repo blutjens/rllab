@@ -48,6 +48,7 @@ class StandEnvVime(Box2DEnv, Serializable):
                  max_action=None,
                  learn_lqt_plus_rl=False,
                  lqt_t_lookahead=5,
+                 just_lqt=False,
                  verbose=True,
                  log_tb=True,
                  log_dir="runs/tst",
@@ -83,6 +84,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.init_w_lqt = init_w_lqt # Set actions to: u = LQT(x) + RL(x)
         self.dead_band = dead_band # Scale action space to {[-max_ma, -dead_b],[dead_b, max_ma]}
         self.max_action = max_action
+        self.just_lqt = just_lqt # Runs just LQT and no RL
         self.learn_lqt_plus_rl = learn_lqt_plus_rl # If true, do u = LQT(x) + RL(x) 
         self.lqt_t_lookahead = lqt_t_lookahead # Lookahaed time of LQT 
         if self.learn_lqt_plus_rl:
@@ -102,7 +104,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         # StandEnv
         if task is None:
             task = tasks.SineTask(
-                steps=500, periods=2., offset=0.)
+                steps=500, periods=1., offset=0.)
 
         # Define goal/reward fn
         self.task = task
@@ -303,7 +305,7 @@ class StandEnvVime(Box2DEnv, Serializable):
     def postprocess_action(self, action):
         """
         Postprocesses action that is received from algorithm.
-        Input:  action: np.array((1,)); in interval [action_space.low, action_space.hight]
+        Input:  action: np.array((1,)); in interval [action_space.low, action_space.high]
         Output: action: np.array((1,)); in interval {[action_space.low-self.dead_band],[action_space.high+self.dead_band]}
         """
         # Add LQT
@@ -313,18 +315,24 @@ class StandEnvVime(Box2DEnv, Serializable):
                 # TODO check of self.t + 1 or not + 0
                 goals[i] = self.task(t=self.t + i)
             action_lqt = self.lqt(self._prev_state[:state_keys.index('Height_Rate')], goals, self.lqt_t_lookahead)            
-            action = action_lqt + action
+            print('act, act_lqt', action, action_lqt)
+            print('just_lqt %r'%(self.just_lqt))
+            if self.just_lqt:
+                action = action_lqt
+            else:
+                action = action_lqt + action
 
         # Rescale dead-band
         action += np.sign(action) * self.dead_band
         return action
 
     # ========== Standard functions =============
-    def step(self, action, partial_obs=None):
+    def step(self, action, partial_obs=None, postprocess_action=True):
         """Perform a step of the environment"""
         done = self.is_current_done()
 
-        self.action = self.postprocess_action(action)
+        self.action = action
+        if postprocess_action: self.action = self.postprocess_action(action)
 
         self.test_stand.send_action(self.action, done=done)
 
@@ -334,7 +342,7 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         self.print_status(self.action, state, reward)
 
-        info = {}
+        info = {'taken_action': self.action}
 
         if self.vis: self.render()
 
@@ -397,7 +405,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.reset(height=0.75)
 
         # Print and save log
-        self.summary_writer.flush()
+        #self.summary_writer.flush()
 
         self.test_stand.close()
 
@@ -444,6 +452,7 @@ class StandEnvVime(Box2DEnv, Serializable):
     @overrides
     def action_space(self):
         if self.max_action:
+            # TODO rewrite this, s.t. I don't have to write it during test!!!
             constants.action_high = np.array([self.max_action], dtype=np.float32)
             constants.action_low = -constants.action_high    
         high = constants.action_high - self.dead_band 

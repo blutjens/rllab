@@ -27,7 +27,7 @@ stub(globals())
 import atexit
 
 # Param ranges
-seeds = [1]#range(1)
+seeds = [2]#range(1)
 # Init env
 timeout = 0.02
 
@@ -71,6 +71,7 @@ for step_size in [0.005, 0.01, 0.001]:
             dead_band=dead_band,
             max_action=max_action,
             learn_lqt_plus_rl=learn_lqt_plus_rl,
+            task=task,
             clear_logdir=True,
             log_dir = "runs/"+log_dir
         ))

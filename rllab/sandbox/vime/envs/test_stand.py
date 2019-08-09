@@ -426,7 +426,7 @@ class TestStandReal(TestStand):
         Send idle commands to test stand
         """
         self._bridge.send_default_commands()
-        time.sleep(self.env.timestep)
+        time.sleep(5*self.env.timestep)
 
     @overrides
     def init_state(self, height=0.55):
@@ -440,13 +440,15 @@ class TestStandReal(TestStand):
 
         max_init_steps = 100
         i = 0
-        while (100*state[state_keys.index('Height')]).astype(int) != np.array([100*height]).astype(int) and i < max_init_steps:
+        # Allow for 0.01m difference in achieved and desired height:
+        while np.abs((100*state[state_keys.index('Height')]).astype(int) - np.array([100*height]).astype(int)) >= 2 and i < max_init_steps:
+            #while i < max_init_steps:
             # Compute error in current height and desired setpoint
             state[state_keys.index('Height')] = state[state_keys.index('Height')] - height
             # Drive error in height to zero
             # TODO: Replace this LQR K with eliminated-dead-bands K
             action = np.dot(np.negative(self.K), np.array(state[:state_keys.index("Height_Rate")+1]))
-            state, _, _, _ = self.env.step(action, partial_obs='full')
+            state, _, _, _ = self.env.step(action, partial_obs='full', postprocess_action=False)
             i += 1
         # Send default commands to stop test stand from moving
         self._send_default_commands()

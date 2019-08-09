@@ -36,14 +36,14 @@ if __name__ == "__main__":
     parser.add_argument('--not_save_fig', action="store_false", default=False,
                         help='save plot in file')
     parser.add_argument('--deterministic', action="store_true", default=False,
-                        help='rollout deterministic')
+                        help='average over multiple deterministic rollouts')
     #parser.add_argument('--tst_scenario', type=str, default=None,
     #                    #choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
     #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
     #                    help='test scenario')
     parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
-                        choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
-                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
+                        choices=['train', 'sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
+                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real', 'just_lqt'],
                         help='test scenario')
     args = parser.parse_args()
 
@@ -56,6 +56,8 @@ if __name__ == "__main__":
     data = joblib.load(model_file)
     policy = data['policy']
     env = data['env']
+    # Init env action space
+    #env.action_space
     env.log_tb = False # Don't create tensorboard logs during benchmark
     if args.display:
         print('env', env)
@@ -64,7 +66,7 @@ if __name__ == "__main__":
     else:
         print('not disp')
         env.wrapped_env.vis = False
-    n_bench_itr = 2
+    n_bench_itr = 10
     tst_params = ['sine']#, 'chirp', 'step']
     plot_mult_tst_params = True
     plt.rcParams.update({'font.size': 28})
@@ -78,9 +80,10 @@ if __name__ == "__main__":
 
         # Get env/net/policy params for printing
         algo_name_long = data['algo'].__class__.__module__ + '.' + data['algo'].__class__.__name__
-        vime = '+ VIME' if 'vime' in algo_name_long else ''
-        trpo = 'TRPO' if 'trpo' in algo_name_long else ''
-        algo_name = trpo + vime
+        trpo = 'TRPO ' if 'trpo' in algo_name_long else ''
+        vime = '+ VIME ' if 'vime' in algo_name_long else ''
+        lqt = '+ LQT ' if env.wrapped_env.learn_lqt_plus_rl else ''
+        algo_name = trpo + vime + lqt
         step_size = data['algo'].step_size
         #if vime != '':
         #    r_train = None#np.mean(data['episode_rewards'])
@@ -88,20 +91,31 @@ if __name__ == "__main__":
         #else:  
         r_train = None
         eps_length = int(data['algo'].max_path_length)
+        batch_size = int(data['algo'].batch_size)
+        avg_eps_p_itr = int(batch_size / eps_length)
         train_itr_res = data['itr']
+        task = env.wrapped_env.task.__class__.__name__
         net_in_dim = policy._mean_network._layers[0].shape[1]
         net_shape = [layer.num_units for layer in policy._mean_network._layers[1:-1]]
         net_out_dim = policy._mean_network._layers[-1].num_units
         beta = env.wrapped_env.beta
         sigma = env.wrapped_env.sigma
         rew_fn = env.wrapped_env.reward_fn.__name__
-        task = env.wrapped_env.task.__class__.__name__
         dead_band = env.wrapped_env.dead_band 
+        #print('eps l, beta, s, rew fn, task, db', eps_length, beta, sigma, env.wrapped_env.reward_fn, env.wrapped_env.task.__dict__, dead_band, env.wrapped_env.max_action)
+        #seed = env.wrapped_env.seed
+        #np.random.seed(seed)
+        #random.seed(seed)
 
         env.wrapped_env.sigma = 0.05
         print('set eval reward fn sigma to ', env.wrapped_env.sigma)
 
         # Test under different task / goal / transition dyn
+        if "train" in args.tst_scenario:
+            pass
+        if "sine" in args.tst_scenario:
+            env.wrapped_env.task = SineTask(
+                    steps=500, periods=1., offset=0.)
         if "chirp" in args.tst_scenario:
             env.wrapped_env.task = ChirpTask(
                     steps=500, periods=1., offset=0.)
@@ -130,12 +144,15 @@ if __name__ == "__main__":
             env.wrapped_env.lqt = LQT(dynamics_path)
         # Test on real teststand
         if "real" in args.tst_scenario:
-            env.wrapped_env.task = SineTask(
-                steps=500, periods=1., offset=0.)    
             from rllab.sandbox.vime.envs.test_stand import TestStandReal
             env.wrapped_env.sim = "real"
             env.wrapped_env.test_stand = TestStandReal(env=env.wrapped_env, use_proxy=env.wrapped_env.use_proxy)
-
+        if "just_lqt" in args.tst_scenario:
+            just_lqt = True
+        else:
+            just_lqt = False
+        env.wrapped_env.just_lqt = just_lqt
+        if just_lqt: algo_name = 'LQT'
 
         #env.wrapped_env.task = SineTask(
         #        steps=500, periods=1., offset=0.)
@@ -146,6 +163,10 @@ if __name__ == "__main__":
         heights = np.zeros((n_bench_itr, args.max_path_length))
         goals = np.zeros((n_bench_itr, args.max_path_length))
         actions = np.zeros((n_bench_itr, args.max_path_length))
+        actions_rl = np.zeros((n_bench_itr, args.max_path_length))
+        postprocessed_actions = np.zeros((n_bench_itr, args.max_path_length))
+        if env.wrapped_env.learn_lqt_plus_rl: 
+            actions_lqt = np.zeros((n_bench_itr, args.max_path_length)) 
         rewards = np.zeros((n_bench_itr, args.max_path_length))
         change_in_actions = np.zeros((n_bench_itr))
         act_std_dev = np.zeros((args.max_path_length-1)) 
@@ -153,7 +174,7 @@ if __name__ == "__main__":
 
             # Execute and log 
             path = rollout(env, policy, max_path_length=args.max_path_length,
-                           animated=False, speedup=args.speedup)
+                           animated=False, speedup=args.speedup, deterministic=args.deterministic)
 
             # Read states
             print('path keys', path.keys())
@@ -164,19 +185,28 @@ if __name__ == "__main__":
             actions[b_i,:len(path['actions'][:,0])] = path['actions'][:,0]
             rewards[b_i,:len(path['rewards'])] = path['rewards']
             cum_rews[b_i] = np.sum(np.array(rewards[b_i,:]))
-            time_steps = np.arange(state['Height'].shape[0])#np.zeros((args.max_path_length))#
+            time_steps = np.arange(args.max_path_length)#np.arange(state['Height'].shape[0])#np.zeros((args.max_path_length))#
             # Get env params
             print('ts', time_steps.shape)
             print('rew', rewards.shape)
             timeout = env.wrapped_env.timestep
 
-            # Scale actions to [-max_ma, max_ma]
+            # Scale actions to [-max_ma, max_ma], as calculated in rllab->rllab->envs->normalized_env.py->step()
             lb, ub = env.wrapped_env.action_space.bounds
             print('action bnd', lb, ub)
             print('actions', actions[b_i,:10])
             actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
             actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
+            actions_rl[b_i,:] = actions[b_i,:]
             print('actions', actions[b_i, :10])
+            #print('takena ct', path['env_infos'])
+            #print('takena ct', path['env_infos']['taken_action'])
+            print('takena ct', path['env_infos']['taken_action'].shape)
+            print('takena ct', path['env_infos']['taken_action'][:10].reshape((10,)))
+            postprocessed_actions[b_i,:] = path['env_infos']['taken_action'][:].reshape((path['env_infos']['taken_action'].shape[0],))
+            if env.wrapped_env.learn_lqt_plus_rl: 
+                act_rl_plus_lqt_minus_db = postprocessed_actions[b_i,:] - np.sign(postprocessed_actions[b_i,:])*dead_band
+                actions_lqt[b_i,:] = act_rl_plus_lqt_minus_db - actions[b_i,:]
             # Calculate change and std dev in actions
             change_in_actions[b_i] = np.mean(np.abs(actions[b_i,1:] - actions[b_i,:-1]))
 
@@ -207,11 +237,12 @@ if __name__ == "__main__":
             # Plot mean and variance of states over runs
             plt_i = 0
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.title.set_text('Averaged over $%d$ itr, on %s, MCAE: $%.4f\pm%.3f$, \n MCSE $%.4f\pm%.3f$, Rew: $%.2f\pm%.3f$: \n'\
+            ax.title.set_text('Averaged over $%d$ itr, MCAE: $%.4f\pm%.3f$, \n MCSE $%.4f\pm%.3f$, Rew: $%.2f\pm%.3f$, Det.Pol.: %r\n'\
                 '$\Delta u:%.3f\pm%.2fmA$, $\sigma(u_t): %.3f\pm%.3fmA$'%(
-                n_bench_itr, tst_param, np.mean(mcae_scores), np.std(mcae_scores),
+                n_bench_itr, np.mean(mcae_scores), np.std(mcae_scores),
                 np.mean(mcse_scores), np.std(mcse_scores),
                 np.mean(cum_rews), np.std(cum_rews),
+                args.deterministic,
                 np.mean(change_in_actions), np.std(change_in_actions),
                 np.mean(act_std_dev), np.std(act_std_dev)
                 ))
@@ -219,7 +250,7 @@ if __name__ == "__main__":
             #ax.title.set_text('averaged runs:')
             ax.plot(time_steps, np.mean(heights,axis=0), label="$\mu(x_t)$")
             ax.fill_between(time_steps, np.mean(heights,axis=0) - np.std(heights,axis=0),
-                 np.mean(heights,axis=0) + np.std(heights,axis=0), color='blue', alpha=0.2, label="$\pm \sigma(x_t)$")
+                 np.mean(heights,axis=0) + np.std(heights,axis=0), color='C0', alpha=0.2, label="$\pm \sigma(x_t)$")
             ax.plot(time_steps, goals[b_i,:], label="$x_{des}$")
             ax.legend()
             ax.set_ylabel('$x_t$ in $m$')
@@ -228,9 +259,11 @@ if __name__ == "__main__":
             plt_i += 1
             #ax = brokenaxes(ylims=((-750, -550),(550, 750)), subplot_spec=sps[2*p_i + plt_i, 0])
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.plot(time_steps[1:], np.mean(actions[:,1:],axis=0), label="$\mu(u_t)$")
-            ax.fill_between(time_steps[1:], np.mean(actions[:,1:],axis=0) - np.std(actions[:,1:],axis=0),
-                 np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
+            if not just_lqt: ax.plot(time_steps[1:], np.mean(actions_rl[:,1:],axis=0), color='green', label="$\mu(u_{t,rl})$")
+            if env.wrapped_env.learn_lqt_plus_rl and not just_lqt: ax.plot(time_steps[1:], np.mean(actions_lqt[:,1:],axis=0), color='orange', label="$\mu(u_{t,lqt})$")
+            ax.plot(time_steps[1:], np.mean(postprocessed_actions[:,1:],axis=0), color='C0', label="$\mu(u_t)$")
+            ax.fill_between(time_steps[1:], np.mean(postprocessed_actions[:,1:],axis=0) - np.std(postprocessed_actions[:,1:],axis=0),
+                 np.mean(postprocessed_actions[:,1:],axis=0) + np.std(postprocessed_actions[:,1:],axis=0), color='C0', alpha=0.2, label="$\pm\sigma(u_t)$")
             ax.set_ylabel('$u_t$ in $mA$')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
             ax.legend()
@@ -238,7 +271,7 @@ if __name__ == "__main__":
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
             ax.plot(time_steps, np.mean(rewards,axis=0), label="$\mu(R)$")
             ax.fill_between(time_steps, np.mean(rewards,axis=0) - np.std(rewards,axis=0),
-                 np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(R)$")
+                 np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='C0', alpha=0.2, label="$\pm\sigma(R)$")
             ax.set_ylabel('$R$ ')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
             ax.legend()
@@ -246,54 +279,66 @@ if __name__ == "__main__":
             # Plot tracking results and compute score for chosen metric
             plt_i += 1
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.title.set_text('sample run:')                                                
-            ax.plot(time_steps, goals[b_i,:], label="$x_{des}$")
-            ax.plot(time_steps, heights[b_i,:], label="x_t")
+            ax.title.set_text('sample run:')
+            ax.plot(time_steps, goals[b_i,:], color='orange', label="$x_{des}$")
+            ax.plot(0, 0.55, '*', label="$x_{init}$")
+            if args.deterministic: ax.plot(time_steps, heights[b_i,:], color='C0', label="x_t")
             ax.legend()
             ax.set_ylabel('$x_t$ in $m$')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
             plt_i += 1
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.plot(time_steps[1:], actions[b_i,1:], '-', label="$u_t$")
+            #ax.plot(time_steps[1:], actions[b_i,1:], '-', label="$u_t$")
+            if args.deterministic:
+                if not just_lqt: ax.plot(time_steps[1:], actions_rl[b_i,1:], '-',color='green',  label="$u_{t, rl}$")
+                if env.wrapped_env.learn_lqt_plus_rl and not just_lqt: ax.plot(time_steps[1:], actions_lqt[b_i,1:], '-',color='orange',  label="$u_{t, lqt}$")
+                ax.plot(time_steps[1:], postprocessed_actions[b_i,1:], '-',color='C0',  label="$u_{t}$")
+            ax.plot(time_steps[:], 550*np.ones(args.max_path_length), '--', color='black', label="$u_{db, env}$")
+            ax.plot(time_steps[:], -550*np.ones(args.max_path_length), '--', color='black')
             ax.set_ylabel('$u_t$ in $mA$')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            ax.legend()
             plt_i += 1
             ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.plot(time_steps, rewards[b_i,:], '-', label="$R_t$")
+            if args.deterministic: 
+                ax.title.set_text('Rew: $%.2f$'%(np.sum(rewards[b_i,:])))
+                ax.plot(time_steps, rewards[b_i,:], '-', label="$R_t$")
             ax.set_ylabel('$R$ ')
             ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
+            ax.legend()
 
             # Execute and log deterministic rollout
-            path = rollout(env, policy, max_path_length=args.max_path_length,
-               animated=False, speedup=args.speedup, deterministic=True)
-            state = {key:path['observations'][:,state_keys.index(key)] for key in state_keys}
-            heights[b_i,:len(state['Height'])] = state['Height']
-            actions[b_i,:len(path['actions'][:,0])] = path['actions'][:,0]
-            rewards[b_i,:len(path['rewards'])] = path['rewards']
-            actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
-            actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
-            change_in_actions_det = np.abs(actions[b_i,1:] - actions[b_i,:-1])
-            actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
-            actions[:,:] = np.where(actions[:,:] < 0., actions[:,:] - dead_band, actions[:,:] + dead_band)#+dead_band*np.sign(actions[b_i,:]))
+            if not args.deterministic:
+                path = rollout(env, policy, max_path_length=args.max_path_length,
+                   animated=False, speedup=args.speedup, deterministic=True)
+                state = {key:path['observations'][:,state_keys.index(key)] for key in state_keys}
+                heights[b_i,:len(state['Height'])] = state['Height']
+                actions[b_i,:len(path['actions'][:,0])] = path['actions'][:,0]
+                rewards[b_i,:len(path['rewards'])] = path['rewards']
+                actions[b_i,:] = lb + (actions[b_i,:] + 1.) * 0.5 * (ub - lb)
+                actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
+                change_in_actions_det = np.abs(actions[b_i,1:] - actions[b_i,:-1])
+                actions[b_i,:] = np.clip(actions[b_i,:], lb, ub)
+                actions[:,:] = np.where(actions[:,:] < 0., actions[:,:] - dead_band, actions[:,:] + dead_band)#+dead_band*np.sign(actions[b_i,:]))
 
-            # Plot tracking results and compute score for chosen metric
-            plt_i -= 2
-            ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.plot(time_steps, heights[b_i,:], '-',color='green', label="$x_{t, det}$")
-            ax.legend()
-            plt_i += 1
-            ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            #ax.title.set_text('$\mu_{steps}(\Delta u):%.3f\pm%.3fmA$, $\sigma_\{steps\}(u_t): %.3fmA$'%(
-            #    np.mean(change_in_actions_det), np.std(change_in_actions_det),
-            #    np.std(actions[b_i,:])
-            #    ))            
-            ax.plot(time_steps[1:], actions[b_i,1:], '-',color='green',  label="$u_{t, det}$")
-            ax.legend()
-            plt_i += 1
-            ax = plt.subplot(sps[2*p_i + plt_i, 0])
-            ax.title.set_text('Rew: $%.2f$'%(np.sum(rewards[b_i,:])))
-            ax.plot(time_steps, rewards[b_i,:], '-', color='green', label="$R_{t, det}$")
-            ax.legend()
+                # Plot tracking results and compute score for chosen metric
+                plt_i -= 2
+                ax = plt.subplot(sps[2*p_i + plt_i, 0])
+                ax.plot(time_steps, heights[b_i,:], '-',color='green', label="$x_{t, det}$")
+                ax.legend()
+                plt_i += 1
+                ax = plt.subplot(sps[2*p_i + plt_i, 0])
+                #ax.title.set_text('$\mu_{steps}(\Delta u):%.3f\pm%.3fmA$, $\sigma_\{steps\}(u_t): %.3fmA$'%(
+                #    np.mean(change_in_actions_det), np.std(change_in_actions_det),
+                #    np.std(actions[b_i,:])
+                #    ))            
+                ax.plot(time_steps[1:], actions[b_i,1:], '-',color='green',  label="$u_{t, det}$")
+                ax.legend()
+                plt_i += 1
+                ax = plt.subplot(sps[2*p_i + plt_i, 0])
+                ax.title.set_text('Rew: $%.2f$'%(np.sum(rewards[b_i,:])))
+                ax.plot(time_steps, rewards[b_i,:], '-', color='green', label="$R_{t, det}$")
+                ax.legend()
 
 
         elif b_i==n_bench_itr-1:
@@ -312,17 +357,17 @@ if __name__ == "__main__":
         #x = np.linspace(0, 1, 100)
         #bax.plot(time_steps[1:], np.mean(actions[:,1:],axis=0), label="$\mu(u_t)$")
         #bax.fill_between(time_steps[1:], np.mean(actions[:,1:],axis=0) - np.std(actions[:,1:],axis=0),
-        #             np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
+        #             np.mean(actions[:,1:],axis=0) + np.std(actions[:,1:],axis=0), color='C0', alpha=0.2, label="$\pm\sigma(u_t)$")
 
         #fig.tight_layout()
         plt.legend()
 
-        total_steps = (train_itr_res)*eps_length*10 if eps_length else None
+        total_steps = (train_itr_res)*eps_length*avg_eps_p_itr if eps_length else None
         
         plt_title = args.plt_title + ' ' + algo_name + '\n'\
         'NN ' + str([net_in_dim, net_shape, net_out_dim]) + '\n' \
         'train R:' + str(r_train) + ' on '+task+',\n'\
-        '' + str(total_steps)+' stps:(' + str(train_itr_res) + 'eps*10runs*'+str(eps_length)+'stps)\n' \
+        '' + str(total_steps)+' stps:(' + str(train_itr_res) + 'itr*'+ str(avg_eps_p_itr)+'eps*'+str(eps_length)+'stps)\n' \
         ''+rew_fn+' with $\\beta=$' + str(beta) + ', $\sigma=$' + str(sigma) +'\n'\
         'step_size='+str(step_size)+', test: '+'+'.join(args.tst_scenario)
 

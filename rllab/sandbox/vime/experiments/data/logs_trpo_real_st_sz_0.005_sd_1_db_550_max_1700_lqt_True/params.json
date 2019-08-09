@@ -79,7 +79,7 @@
   "n_parallel": 1,
   "params_log_file": "params.json",
   "plot": false,
-  "resume_from": null,
+  "resume_from": "data/logs_trpo_real_st_sz_0.005_sd_1_db_550_max_1700_lqt_True/itr_62.pkl",
   "seed": 1,
   "sim": "real",
   "snapshot_mode": "all",
