@@ -1,0 +1,89 @@
+{
+  "args_data": "gASVsgMAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjARyZWFslIwDdmlzlImMB3ZlcmJvc2WUiIwJZGVhZF9iYW5klEdAgTAAAAAAAIwKbWF4X2FjdGlvbpRHQJqQAAAAAACMEWxlYXJuX2xxdF9wbHVzX3JslImMDGNsZWFyX2xvZ2RpcpSIjAdsb2dfZGlylIw+cnVucy9sb2dzX3RycG9fcmVhbF9zdF9zel8wLjAxMF9zZF8yX2RiXzU1MF9tYXhfMTcwMF9scXRfRmFsc2WUdYwLcHJveHlfY2xhc3OUjCZybGxhYi5zYW5kYm94LnZpbWUuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gfjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoH4wicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGgqaCwpgZR9lChoL2gOaDBoMXVic2gfjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylE0sAYwJc3RlcF9zaXpllEc/hHrhR64Ue4wQc3Vic2FtcGxlX2ZhY3RvcpRHP/AAAAAAAACMBHBsb3SUiXVoH4wQcmxsYWIuYWxnb3MudHJwb5SMBFRSUE+Uk5R1YowFdHJhaW6UKX2UdJSMCF9fa3dhcmdzlH2UdWIu",
+  "exp_name": "trpo_2019_08_08_00_48_19_0002",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.algos.trpo.TRPO",
+      "batch_size": 5000,
+      "max_path_length": 500,
+      "n_itr": 300,
+      "plot": false,
+      "step_size": 0.01,
+      "subsample_factor": 1.0,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 550.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_trpo_real_st_sz_0.010_sd_2_db_550_max_1700_lqt_False",
+            "max_action": 1700.0,
+            "sim": "real",
+            "timeout": 0.02,
+            "verbose": true,
+            "vis": false
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+        "clear_logdir": true,
+        "dead_band": 550.0,
+        "learn_lqt_plus_rl": false,
+        "log_dir": "runs/logs_trpo_real_st_sz_0.010_sd_2_db_550_max_1700_lqt_False",
+        "max_action": 1700.0,
+        "sim": "real",
+        "timeout": 0.02,
+        "verbose": true,
+        "vis": false
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "rllab.sandbox.vime.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 550.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_trpo_real_st_sz_0.010_sd_2_db_550_max_1700_lqt_False",
+            "max_action": 1700.0,
+            "sim": "real",
+            "timeout": 0.02,
+            "verbose": true,
+            "vis": false
+          }
+        }
+      },
+      "hidden_sizes": [
+        64,
+        32
+      ]
+    }
+  },
+  "log_dir": "data/logs_trpo_real_st_sz_0.010_sd_2_db_550_max_1700_lqt_False",
+  "log_tabular_only": false,
+  "n_parallel": 1,
+  "params_log_file": "params.json",
+  "plot": false,
+  "resume_from": null,
+  "seed": 2,
+  "sim": "real",
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}
