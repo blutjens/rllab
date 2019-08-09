@@ -85,13 +85,18 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.dead_band = dead_band # Scale action space to {[-max_ma, -dead_b],[dead_b, max_ma]}
         self.max_action = max_action
         self.just_lqt = just_lqt # Runs just LQT and no RL
+        self.use_full_state_lqt = False
         self.learn_lqt_plus_rl = learn_lqt_plus_rl # If true, do u = LQT(x) + RL(x) 
         self.lqt_t_lookahead = lqt_t_lookahead # Lookahaed time of LQT 
         if self.learn_lqt_plus_rl:
             from solenoid.controls.lqt import LQT
+            if self.use_full_state_lqt:
+                constants.lqt_state_ids = ["Rod_Pressure", "Base_Pressure", "System_Pressure", "Load_Sense_Pressure", "Reservoir_Temperature", "Height", "Height_Rate"]
+                dynamics_path = '../../../../../solenoid/controls/data/teststand_AB.pkl'#teststand_AB_opt_on_sim.pkl'#
+            else:
+                dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
             # TODO set this path with controls module path.
-            dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
-            self.lqt = LQT(dynamics_path)
+            self.lqt = LQT(dynamics_path, self.use_full_state_lqt)
             
         # Define partial observation 
         if self.partial_obs=='height_only':# Set obs to [height_t, goal_height] 
@@ -314,14 +319,19 @@ class StandEnvVime(Box2DEnv, Serializable):
             for i in range(self.lqt_t_lookahead):
                 # TODO check of self.t + 1 or not + 0
                 goals[i] = self.task(t=self.t + i)
-            action_lqt = self.lqt(self._prev_state[:state_keys.index('Height_Rate')], goals, self.lqt_t_lookahead)            
+            action_lqt = self.lqt(self._prev_state[:state_keys.index('Goal_Height')], goals, self.lqt_t_lookahead)            
             print('act, act_lqt', action, action_lqt)
             print('just_lqt %r'%(self.just_lqt))
+            if self.use_full_state_lqt:
+                print('act_bf cli', action_lqt)
+                action_lqt = np.clip(action_lqt, -constants.max_ma+self.dead_band, constants.max_ma-self.dead_band)
+                print('act_bf cli', action_lqt)
             if self.just_lqt:
                 action = action_lqt
             else:
                 action = action_lqt + action
 
+            action = action_lqt + action
         # Rescale dead-band
         action += np.sign(action) * self.dead_band
         return action
@@ -405,7 +415,11 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.reset(height=0.75)
 
         # Print and save log
+<<<<<<< HEAD
         #self.summary_writer.flush()
+=======
+        # self.summary_writer.flush()
+>>>>>>> b076cfb4c25f4841c91cc94237e88d5600b923dd
 
         self.test_stand.close()
 
@@ -564,23 +578,15 @@ def test_optimal_action(args, n_itr, max_time, time_steps, times, start_time, ac
     for n_i in range(n_itr):
         state = env.reset(height=0.55, stay=False)
         print(state)
-        for t in range(max_time):
-            if args.keyboard:
-                action = np.zeros(shape=1, dtype=np.float32)
-                if keyboard.is_pressed("q"):
-                    action[0] = 1.0
-                elif keyboard.is_pressed("a"):
-                    action[0] = -1.0
-                action = action * 1200
-            else:                
-                delta_goal = np.array([task(t=t+1)], dtype=np.float64) * 2. * np.pi * periods / t_max  # Derivative of goal task : sin(h_offset + 2pi n_periods t/t_max)
-                delta_goal_height = delta_goal * 1./2. * (constants.goal_max - constants.goal_min)  # Derivative of shift and scale of goal task
-                action_incr = 1./d_h_dot_d_u_up * delta_goal_height 
-                action = 1./timestep * action_incr # 1/dt * action
-                if action <= 0.:
-                    action += u_dead_band_min
-                elif action > 0.:
-                    action -= u_dead_band_min
+        for t in range(int(t_max)):
+            delta_goal = np.array([task(t=t+1)], dtype=np.float64) * 2. * np.pi * periods / t_max  # Derivative of goal task : sin(h_offset + 2pi n_periods t/t_max)
+            delta_goal_height = delta_goal * 1./2. * (constants.goal_max - constants.goal_min)  # Derivative of shift and scale of goal task
+            action_incr = 1./d_h_dot_d_u_up * delta_goal_height 
+            action = 1./timestep * action_incr # 1/dt * action
+            if action <= 0.:
+                action += u_dead_band_min
+            elif action > 0.:
+                action -= u_dead_band_min
             state, reward, done, info = copy.deepcopy(env.step(action))
 
             # For plotting
@@ -647,6 +653,7 @@ def main():
             state, reward, done, info = copy.deepcopy(env.step(action))
 
             # For plotting
+            print('act', env.action[0], action[0])
             actions[n_i,t] = env.action[0] - action[0] # [LQT(x)+RL(x)] - RL(x) 
             for key in constants.state_keys:
                 states[key][n_i, t] = state[constants.state_keys.index(key)]

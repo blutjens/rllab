@@ -6,11 +6,8 @@ os.environ["THEANO_FLAGS"] = "device=cpu"
 #from rllab.sandbox.vime.envs.cartpole_swingup_env_x import CartpoleSwingupEnvX
 #from rllab.envs.box2d.mountain_car_env import MountainCarEnv
 #from rllab.envs.mujoco.gather.swimmer_gather_env import SwimmerGatherEnv
-#import sys
-#sys.path.append("..") # Adds higher directory to python modules path.
 
 from rllab.sandbox.vime.envs.stand_env_vime import StandEnvVime
-#from envs.stand_env_vime import StandEnvVime
 
 
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
@@ -39,7 +36,7 @@ task = SineTask(
 # Params for testing 
 #small_neg_rew=False
 partial_obs = None#'err_only' #'height_only', None
-sim = "real" # "sim", "real"
+sim = "sim_physics"#"real" # "sim", "real"
 #t_lookahead=0
 #t_past=0
 #init_w_lqt=False
@@ -117,6 +114,8 @@ for step_size in [0.005, 0.01, 0.001]:
             plot=False,
             script="rllab/sandbox/vime/experiments/run_experiment_lite.py"
         )
+        import sys
+        sys.exit()
 ## VIME
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from rllab.sandbox.vime.algos.trpo_expl import TRPO as Trpo_vime

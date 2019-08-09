@@ -42,8 +42,13 @@ if __name__ == "__main__":
     #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
     #                    help='test scenario')
     parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
+<<<<<<< HEAD
                         choices=['train', 'sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
                         'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real', 'just_lqt'],
+=======
+                        choices=['sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
+                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
+>>>>>>> b076cfb4c25f4841c91cc94237e88d5600b923dd
                         help='test scenario')
     args = parser.parse_args()
 
