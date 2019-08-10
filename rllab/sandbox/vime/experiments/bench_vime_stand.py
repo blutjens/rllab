@@ -2,7 +2,7 @@ import argparse
 
 import joblib
 import tensorflow as tf
-import tqdm 
+from tqdm import tqdm 
 
 from rllab.misc.console import query_yes_no
 from rllab.sampler.utils import rollout
