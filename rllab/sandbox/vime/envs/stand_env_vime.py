@@ -18,13 +18,14 @@ from rllab.core.serializable import Serializable
 from rllab.envs.box2d.box2d_env import Box2DEnv
 from rllab.misc import autoargs
 from rllab.misc.overrides import overrides
+from rllab.misc import logger
 
 from solenoid.envs.constants import state_keys
 from solenoid.envs import constants
 from solenoid.misc import tasks
 from solenoid.misc.reward_fns import goal_bias
 
-from rllab.sandbox.vime.envs.test_stand import TestStandSim, TestStandSimPhysics, TestStandReal
+from solenoid.envs.test_stand import TestStandSim, TestStandSimPhysics, TestStandReal
 
 class StandEnvVime(Box2DEnv, Serializable):
 
@@ -53,11 +54,13 @@ class StandEnvVime(Box2DEnv, Serializable):
                  log_tb=True,
                  log_dir="runs/tst",
                  clear_logdir=False,
+                 goal=None, # Reset parameter for MAML 
                  *args, **kwargs):
         super(StandEnvVime, self).__init__(
             self.model_path("stand_env.xml.mako"),
             *args, **kwargs
         )
+        print('INITIALIZING THE ENV')
         #print('in eager mode at standenv init', tf.executing_eagerly())
         #tf.enable_eager_execution()
 
@@ -71,6 +74,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.max_weights_pos = 2
         # TODO find out what these parameters did:
         # self.goal_weights_pos = goal_weights_pos
+
 
         self.weights = find_body(self.world, "weights")
         self.initial_state = self._state # state that is copied to init Box2DEnv
@@ -106,6 +110,12 @@ class StandEnvVime(Box2DEnv, Serializable):
         else: # TODO only take in state until goal height!
             self.obs_state_ids = range(len(state_keys))
 
+        # MAML
+        self._goal = goal
+        if self._goal is not None:
+            print('OVERWRITING GOAL', self._goal)
+            self.dead_band = self._goal
+
         # StandEnv
         if task is None:
             task = tasks.SineTask(
@@ -117,7 +127,9 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.beta = beta
         self.sigma = sigma
         self.action_penalty = action_penalty
-
+        self.prev_action = 0. # Action buffer to comp action penalty, in mA
+        self.action_penalty_log = 0.  
+        self.goal_rew_log = 0. 
         # Tensorboard
         #if log_tb: self.writer = SummaryWriter(logdir="/home/bjoern/Desktop/vector-solenoid/rllab/rllab/sandbox/vime/envs/runs/tst/")#runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
         self.log_tb = log_tb
@@ -145,7 +157,6 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.t = 0
         self.timestep = timeout # overwrites box2D timestep
         self.n_i = 0 # number of iteration during training
-
         # Init test stand
         self.sim = sim # if true step in forward dyn simulation; if false step on physical test stand
         self.use_proxy=use_proxy
@@ -155,6 +166,8 @@ class StandEnvVime(Box2DEnv, Serializable):
             self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep, data_log=self.data_log)
         elif self.sim=="real":
             self.test_stand = TestStandReal(env=self, use_proxy=use_proxy)
+        else:
+            self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep, data_log=self.data_log)
         
         self._prev_time = time.time() # Used to maintain fixed rate of action commands on physical test stand
         self._prev_state = None
@@ -274,7 +287,7 @@ class StandEnvVime(Box2DEnv, Serializable):
             self.t, action[0], state[0],state[1], reward))
         elif self.verbose and self.partial_obs=='err_only': print('t: %3d, u_t: %.8f err_t: %.5fm, R: %.4f'%(
             self.t, action[0], state[0], reward))
-        elif self.verbose: print('t: %4d u_t: %14.8f x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s, R: %9.4f'%(
+        elif self.verbose: print('t: %4d u_t-: %14.8f x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s, R: %9.4f'%(
             self.t,
             action[0], state[(state_keys.index('Height'))],
             state[(state_keys.index('Height_Rate'))],
@@ -286,13 +299,17 @@ class StandEnvVime(Box2DEnv, Serializable):
         """
         Adds log to tensorboard summary
         """
-        print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["rewards"])))
+        #print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["rewards"])))
+        if self.verbose:
+            logger.log('Change in Action: %.8f at %d'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i))
+            logger.log('Reward: %.8f at %d'%(np.mean(np.asarray(self.data_log["rewards"])), self.n_i))
+
         if self.n_i == 1:
-            print('ADDING SUMMARY')
+            #print('ADDING SUMMARY')
             self.summary.value.add(tag="data/reward", simple_value=np.sum(np.asarray(self.data_log["rewards"])))
             self.summary.value.add(tag="data/change_in_act", simple_value=np.mean(np.asarray(self.data_log["change_in_act"][:-2])))
         if len(self.data_log["rewards"]) != 0 and self.n_i > 1: 
-            print('self summarvy val', self.summary.value)
+            #print('self summarvy val', self.summary.value)
             self.summary.value[0].simple_value = np.sum(np.asarray(self.data_log["rewards"]))
             self.summary.value[1].simple_value = np.mean(np.asarray(self.data_log["change_in_act"][:-2]))
             #self.summary = tf.Summary(value=[
@@ -336,23 +353,35 @@ class StandEnvVime(Box2DEnv, Serializable):
         action += np.sign(action) * self.dead_band
         return action
 
+    #==================== For MAML ========================
+    def sample_goals(self, num_goals):
+        # Samples environments (in this case dead_bands) 
+        return np.random.uniform(0, 550, size=(num_goals, 1, ))
+
+
     # ========== Standard functions =============
     def step(self, action, partial_obs=None, postprocess_action=True):
         """Perform a step of the environment"""
         done = self.is_current_done()
 
         self.action = action
+        if self.t == 1: self.prev_action = action # init action_delta as zero
         if postprocess_action: self.action = self.postprocess_action(action)
 
         self.test_stand.send_action(self.action, done=done)
 
         state = self.get_current_obs(partial_obs)
 
-        reward = self.compute_reward(self.action, done)
+        # pass pre-dead_band mapping actions
+        reward = self.compute_reward(self.action - np.sign(self.action) * self.dead_band, done, prev_action=self.prev_action - np.sign(self.prev_action) * self.dead_band)
 
         self.print_status(self.action, state, reward)
 
-        info = {'taken_action': self.action}
+        # Log extra info
+        info = {'taken_action': self.action, 
+            'action_penalty':   self.action_penalty_log,
+            'goal_rew':         self.goal_rew_log}
+        self.prev_action = self.action
 
         if self.vis: self.render()
 
@@ -361,7 +390,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         return state, reward, done, info
 
     @overrides
-    def reset(self, height=0.55, stay=False, create_log=True):
+    def reset(self, height=0.55, stay=False, create_log=True, reset_args=None):
         """
         Reset test stand and visualization. Environment to a specific height or to the previous height
 
@@ -371,10 +400,17 @@ class StandEnvVime(Box2DEnv, Serializable):
         
         stay (bool): If True, send zero actions and reset to same height as earlier position
                      If False, reset to height specified by param height
+        reset_args: Args from MAML to reset environment 
         """
+        if reset_args is not None:
+            print('reset args:', reset_args)
+            self._goal = reset_args
+            self.dead_band = self._goal
+
+        #if self.verbose: print('db', self.dead_band)
         if create_log and self.summary_writer: self.log_tensorboard()
 
-        print('RESET CALLED to height: ', height)
+        if self.verbose: print('RESET CALLED to height: ', height)
         self._prev_time = time.time()
         if not stay: # Reset test 
             self.test_stand.init_state(height=height)
@@ -382,6 +418,9 @@ class StandEnvVime(Box2DEnv, Serializable):
         # Reset timestep counter
         self.t = 0
         state = self.get_current_obs()
+        # Reset prev action. Set action 0 + dead_band in direction of goal.
+        # TODO incorporate less domain knowledge to init prev_action 
+        self.prev_action = 0. - np.sign(state[(state_keys.index('Goal_Height'))] - state[(state_keys.index('Height'))]) * self.dead_band
         if self.verbose:
             print('state after reset: t: %4d x_t: %7.5fm, %8.5fm/s, x_g_t: %7.5f , %11.8fm/s'%(
                 self.t, state[(state_keys.index('Height'))],
@@ -420,7 +459,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.test_stand.close()
 
     @overrides
-    def compute_reward(self, action, done):
+    def compute_reward(self, action, done, prev_action=0.):
         # Computations before stepping the world
         # TODO: check if I should store _prev_state here
         # TODO check if i should write yield instead of return
@@ -436,7 +475,17 @@ class StandEnvVime(Box2DEnv, Serializable):
                     action,
                     beta=self.beta,
                     sigma=self.sigma,
-                    penalty=self.action_penalty)
+                    penalty=self.action_penalty,
+                    prev_action=prev_action)
+            elif self.reward_fn.__name__ == 'goal_bias_action_penalty_2':
+                reward, self.goal_rew_log, self.action_penalty_log = self.reward_fn(
+                    self._prev_state,
+                    action,
+                    beta=self.beta,
+                    sigma=self.sigma,
+                    penalty=self.action_penalty,
+                    prev_action=prev_action)
+                if self.verbose: print('gb', reward, goal_rew, action_pen, self._prev_state, action, self.beta, self.sigma, self.action_penalty)                    
             else:
                 reward = self.reward_fn(
                     self._prev_state,

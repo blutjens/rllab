@@ -24,7 +24,6 @@ from solenoid.envs.proxy_stand_bridge import ProxyStandBridge
 
 # Forward dynamics for simulated test stand
 from solenoid.misc import normalizers
-from solenoid.forward_models import models
 
 # For teststand tests
 from solenoid.misc import tasks
@@ -86,7 +85,7 @@ class TestStandSimPhysics(TestStand):
 
     @overrides
     def init_state(self, height=0.55,init_state_dict=None):
-        logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2]))))
+        #if self.env.verbose: logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2]))))
         self.data_log["change_in_act"] = [0]
 
         if init_state_dict is None:
@@ -274,6 +273,8 @@ class TestStandSim(TestStand):
             forw_model_type="gaussian",
             forw_job_dir="../../../../../solenoid/forward_models/gaussian_1000_500",
             env=None):
+
+        from solenoid.forward_models import models
 
         self._state_tensor = None
         print('TODO: assign forward model path dynamically')

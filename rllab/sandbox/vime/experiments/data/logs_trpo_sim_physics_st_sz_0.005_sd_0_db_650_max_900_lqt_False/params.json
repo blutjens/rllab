@@ -1,0 +1,107 @@
+{
+  "args_data": "gASVJAQAAAAAAACMFXJsbGFiLm1pc2MuaW5zdHJ1bWVudJSMDlN0dWJNZXRob2RDYWxslJOUKYGUfZQojAZfX2FyZ3OUKGgAjApTdHViT2JqZWN0lJOUKYGUfZQojARhcmdzlCmMBmt3YXJnc5R9lCiMA2VudpRoBymBlH2UKGgKKWgLfZRoDWgHKYGUfZQoaAopaAt9lCiMB3RpbWVvdXSURz+UeuFHrhR7jANzaW2UjAtzaW1fcGh5c2ljc5SMA3Zpc5SJjAd2ZXJib3NllImMCWRlYWRfYmFuZJRHQIRQAAAAAACMCm1heF9hY3Rpb26UR0CMIAAAAAAAjBFsZWFybl9scXRfcGx1c19ybJSJjAR0YXNrlGgHKYGUfZQoaAopaAt9lCiMBXN0ZXBzlE30AYwHcGVyaW9kc5RHP/AAAAAAAACMBm9mZnNldJRHAAAAAAAAAAB1jAtwcm94eV9jbGFzc5SME3NvbGVub2lkLm1pc2MudGFza3OUjAhTaW5lVGFza5STlHVijAxjbGVhcl9sb2dkaXKUiIwHbG9nX2RpcpSMRHJ1bnMvbG9nc190cnBvX3NpbV9waHlzaWNzX3N0X3N6XzAuMDA1X3NkXzBfZGJfNjUwX21heF85MDBfbHF0X0ZhbHNllHVoI4wcc29sZW5vaWQuZW52cy5zdGFuZF9lbnZfdmltZZSMDFN0YW5kRW52VmltZZSTlHVic2gjjBlybGxhYi5lbnZzLm5vcm1hbGl6ZWRfZW52lIwNTm9ybWFsaXplZEVudpSTlHVijAZwb2xpY3mUaAcpgZR9lChoCiloC32UKIwIZW52X3NwZWOUaACMCFN0dWJBdHRylJOUKYGUfZQojARfb2JqlGgOjApfYXR0cl9uYW1llIwEc3BlY5R1YowMaGlkZGVuX3NpemVzlEtASyCGlHVoI4wicmxsYWIucG9saWNpZXMuZ2F1c3NpYW5fbWxwX3BvbGljeZSMEUdhdXNzaWFuTUxQUG9saWN5lJOUdWKMCGJhc2VsaW5llGgHKYGUfZQoaAopaAt9lGg0aDYpgZR9lChoOWgOaDpoO3Vic2gjjCdybGxhYi5iYXNlbGluZXMubGluZWFyX2ZlYXR1cmVfYmFzZWxpbmWUjBVMaW5lYXJGZWF0dXJlQmFzZWxpbmWUk5R1YowKYmF0Y2hfc2l6ZZRNiBOMC3dob2xlX3BhdGhzlIiMD21heF9wYXRoX2xlbmd0aJRN9AGMBW5faXRylE0sAYwJc3RlcF9zaXpllEc/dHrhR64Ue4wQc3Vic2FtcGxlX2ZhY3RvcpRHP/AAAAAAAACMBHBsb3SUiXVoI4wQcmxsYWIuYWxnb3MudHJwb5SMBFRSUE+Uk5R1YowFdHJhaW6UKX2UdJSMCF9fa3dhcmdzlH2UdWIu",
+  "exp_name": "trpo_2019_08_16_23_24_48_0001",
+  "json_args": {
+    "algo": {
+      "_name": "rllab.algos.trpo.TRPO",
+      "batch_size": 5000,
+      "max_path_length": 500,
+      "n_itr": 300,
+      "plot": false,
+      "step_size": 0.005,
+      "subsample_factor": 1.0,
+      "whole_paths": true
+    },
+    "baseline": {
+      "_name": "rllab.baselines.linear_feature_baseline.LinearFeatureBaseline",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "solenoid.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 650.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_650_max_900_lqt_False",
+            "max_action": 900.0,
+            "sim": "sim_physics",
+            "task": {
+              "_name": "solenoid.misc.tasks.SineTask",
+              "offset": 0.0,
+              "periods": 1.0,
+              "steps": 500
+            },
+            "timeout": 0.02,
+            "verbose": false,
+            "vis": false
+          }
+        }
+      }
+    },
+    "env": {
+      "_name": "rllab.envs.normalized_env.NormalizedEnv",
+      "env": {
+        "_name": "solenoid.envs.stand_env_vime.StandEnvVime",
+        "clear_logdir": true,
+        "dead_band": 650.0,
+        "learn_lqt_plus_rl": false,
+        "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_650_max_900_lqt_False",
+        "max_action": 900.0,
+        "sim": "sim_physics",
+        "task": {
+          "_name": "solenoid.misc.tasks.SineTask",
+          "offset": 0.0,
+          "periods": 1.0,
+          "steps": 500
+        },
+        "timeout": 0.02,
+        "verbose": false,
+        "vis": false
+      }
+    },
+    "policy": {
+      "_name": "rllab.policies.gaussian_mlp_policy.GaussianMLPPolicy",
+      "env_spec": {
+        "attr": "spec",
+        "obj": {
+          "_name": "rllab.envs.normalized_env.NormalizedEnv",
+          "env": {
+            "_name": "solenoid.envs.stand_env_vime.StandEnvVime",
+            "clear_logdir": true,
+            "dead_band": 650.0,
+            "learn_lqt_plus_rl": false,
+            "log_dir": "runs/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_650_max_900_lqt_False",
+            "max_action": 900.0,
+            "sim": "sim_physics",
+            "task": {
+              "_name": "solenoid.misc.tasks.SineTask",
+              "offset": 0.0,
+              "periods": 1.0,
+              "steps": 500
+            },
+            "timeout": 0.02,
+            "verbose": false,
+            "vis": false
+          }
+        }
+      },
+      "hidden_sizes": [
+        64,
+        32
+      ]
+    }
+  },
+  "log_dir": "data/logs_trpo_sim_physics_st_sz_0.005_sd_0_db_650_max_900_lqt_False",
+  "log_tabular_only": false,
+  "n_parallel": 4,
+  "params_log_file": "params.json",
+  "plot": false,
+  "resume_from": null,
+  "seed": 0,
+  "sim": "sim_physics",
+  "snapshot_mode": "all",
+  "tabular_log_file": "progress.csv",
+  "text_log_file": "debug.log",
+  "use_cloudpickle": true
+}

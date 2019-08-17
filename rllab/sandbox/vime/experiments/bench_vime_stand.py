@@ -24,6 +24,8 @@ from solenoid.misc.tasks import SineTask,ChirpTask,StepTask#,ToZeroTask
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('--model_folder', type=str, default='data',
+                        help='path to the snapshot folder')
     parser.add_argument('--model', type=str, default='logs_vime_stand_4_0_res/itr_17',
                         help='path to the snapshot file')
     parser.add_argument('--plt_title', type=str, default='',
@@ -44,13 +46,16 @@ if __name__ == "__main__":
                         help='create plot over multiple training iterations')
     parser.add_argument('--not_verbose', action="store_true", default=False,
                         help='not print logs of environment to terminal')
+    parser.add_argument('--bench_maml', action="store_true", default=False,
+                        help='benchmark maml results')
     #parser.add_argument('--tst_scenario', type=str, default=None,
     #                    #choices=['chirp', 'step', 'larger_deadbands', 'no_deadbands', 
     #                    #'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real'],
     #                    help='test scenario')
     parser.add_argument('--tst_scenario', action="store", nargs='*', type=str, default=None,
                         choices=['train', 'sine', 'chirp', 'step', 'larger_deadbands', 'no_deadbands', 
-                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real', 'just_lqt'],
+                        'lower_height_rate_up', 'greater_height_rate_up', 'learn_lqt_plus_rl', 'real', 
+                        'just_lqt', 'rew_action_penalty', 'rew_goal_bias'],
                         help='test scenario')
     args = parser.parse_args()
 
@@ -58,23 +63,26 @@ if __name__ == "__main__":
     if args.plt_u_over_train_itr:
         import imageio
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-        itrs_to_plot =  np.linspace(0, 297, 298, dtype=int)#np.linspace(299)#[1, 49, 99, 149, 199]
-        model_folder ='data/' + args.model
+        itrs_to_plot =  np.linspace(0, 225, 112, dtype=int)#np.linspace(299)#[1, 49, 99, 149, 199]
+        model_folder = args.model_folder + "/" + args.model
         print(str(model_folder))
         model_files = ['' + model_folder + '/itr_' + str(itr) + '.pkl' for itr in itrs_to_plot]
-        gif_writer = imageio.get_writer('plots/'+ args.model +'/u_over_train_itr.gif', mode='I')
+        directory = 'plots/'+ args.model
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        gif_writer = imageio.get_writer(directory +'/u_over_train_itr.gif', mode='I')
         args.not_save_fig = True
         args.display = False
     else:
-        model_files = 'data/' + args.model + '.pkl'
+        model_files = [args.model_folder + '/' + args.model + '.pkl']
 
     for model_file in tqdm(model_files):
-
+      print('model_file', model_file)
+      if args.bench_maml: import tensorflow as tf
+      #with tf.Session():
+      #     [rest of the code]y
+      with tf.Session() as sess:
         # If the snapshot model_file use tensorflow, do:
-        # import tensorflow as tf
-        # with tf.Session():
-        #     [rest of the code]y
-        #with tf.Session() as sess:
         data = joblib.load(model_file)
         policy = data['policy']
         env = data['env']
@@ -105,25 +113,37 @@ if __name__ == "__main__":
         for p_i, tst_param in enumerate(tst_params):
 
             # Get env/net/policy params for printing
-            algo_name_long = data['algo'].__class__.__module__ + '.' + data['algo'].__class__.__name__
-            trpo = 'TRPO ' if 'trpo' in algo_name_long else ''
-            vime = '+ VIME ' if 'vime' in algo_name_long else ''
-            lqt = '+ LQT ' if env.wrapped_env.learn_lqt_plus_rl else ''
-            algo_name = trpo + vime + lqt
-            step_size = data['algo'].step_size
-            #if vime != '':
-            #    r_train = None#np.mean(data['episode_rewards'])
-            #    eps_length = int(np.mean(data['episode_lengths']))
-            #else:  
-            r_train = None
-            eps_length = int(data['algo'].max_path_length)
-            batch_size = int(data['algo'].batch_size)
+            print('algo', data)
+            if args.bench_maml:
+                algo_name = 'maml'
+                step_size = 0.005
+                eps_length = 500
+                batch_size = 5000
+                env = env.wrapped_env
+                net_in_dim = 11
+                net_out_dim = 1
+                net_shape = (64, 32)
+            else:
+                algo_name_long = data['algo'].__class__.__module__ + '.' + data['algo'].__class__.__name__
+                trpo = 'TRPO ' if 'trpo' in algo_name_long else ''
+                vime = '+ VIME ' if 'vime' in algo_name_long else ''
+                lqt = '+ LQT ' if env.wrapped_env.learn_lqt_plus_rl else ''
+                algo_name = trpo + vime + lqt
+                step_size = data['algo'].step_size
+                #if vime != '':
+                #    r_train = None#np.mean(data['episode_rewards'])
+                #    eps_length = int(np.mean(data['episode_lengths']))
+                #else:  
+                eps_length = int(data['algo'].max_path_length)
+                batch_size = int(data['algo'].batch_size)
+                net_in_dim = policy._mean_network._layers[0].shape[1]
+                net_out_dim = policy._mean_network._layers[-1].num_units
+                net_shape = [layer.num_units for layer in policy._mean_network._layers[1:-1]]
+
             avg_eps_p_itr = int(batch_size / eps_length)
+            r_train = None
             train_itr_res = data['itr']
             task = env.wrapped_env.task.__class__.__name__
-            net_in_dim = policy._mean_network._layers[0].shape[1]
-            net_shape = [layer.num_units for layer in policy._mean_network._layers[1:-1]]
-            net_out_dim = policy._mean_network._layers[-1].num_units
             beta = env.wrapped_env.beta
             sigma = env.wrapped_env.sigma
             rew_fn = env.wrapped_env.reward_fn.__name__
@@ -169,6 +189,13 @@ if __name__ == "__main__":
                 # TODO set this path with controls module path
                 dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
                 env.wrapped_env.lqt = LQT(dynamics_path)
+            # Test under different reward function
+            if "rew_action_penalty" in args.tst_scenario:
+                from solenoid.misc.reward_fns import goal_bias_action_penalty_2
+                env.wrapped_env.reward_fn = goal_bias_action_penalty_2
+            if "rew_goal_bias" in args.tst_scenario:
+                from solenoid.misc.reward_fns import goal_bias
+                env.wrapped_env.reward_fn = goal_bias
             # Test on real teststand
             if "real" in args.tst_scenario:
                 from rllab.sandbox.vime.envs.test_stand import TestStandReal
@@ -192,6 +219,9 @@ if __name__ == "__main__":
             if env.wrapped_env.learn_lqt_plus_rl: 
                 actions_lqt = np.zeros((n_eval_eps, args.max_path_length)) 
             rewards = np.zeros((n_eval_eps, args.max_path_length))
+            if env.wrapped_env.reward_fn.__name__ == 'goal_bias_action_penalty_2':
+                action_penalties = np.zeros((n_eval_eps, args.max_path_length)) 
+                goal_rews = np.zeros((n_eval_eps, args.max_path_length)) 
             change_in_actions = np.zeros((n_eval_eps))
             act_std_dev = np.zeros((args.max_path_length-1)) 
             for b_i in tqdm(range(n_eval_eps)):
@@ -212,6 +242,14 @@ if __name__ == "__main__":
                 time_steps = np.arange(args.max_path_length)#np.arange(state['Height'].shape[0])#np.zeros((args.max_path_length))#
                 # Get env params
                 timeout = env.wrapped_env.timestep
+
+                # Get Rewards, if reward is shaped:
+                if env.wrapped_env.reward_fn.__name__ == 'goal_bias_action_penalty_2':
+                    print('path env ', path['env_infos'])
+                    print('path env ', path['env_infos']['action_penalty'])
+                    print('path env ', path['env_infos']['action_penalty'][:].reshape((path['env_infos']['action_penalty'].shape[0],)))
+                    action_penalties[b_i,:] = path['env_infos']['action_penalty'][:].reshape((path['env_infos']['action_penalty'].shape[0],))
+                    goal_rews[b_i,:] = path['env_infos']['goal_rew'][:].reshape((path['env_infos']['goal_rew'].shape[0],))
 
                 # Scale actions to [-max_ma, max_ma], as calculated in rllab->rllab->envs->normalized_env.py->step()
                 lb, ub = env.wrapped_env.action_space.bounds
@@ -285,7 +323,10 @@ if __name__ == "__main__":
                 ax.plot(time_steps, np.mean(rewards,axis=0), label="$\mu(R)$")
                 ax.fill_between(time_steps, np.mean(rewards,axis=0) - np.std(rewards,axis=0),
                      np.mean(rewards,axis=0) + np.std(rewards,axis=0), color='C0', alpha=0.2, label="$\pm\sigma(R)$")
-                if args.plt_u_over_train_itr: ax.set_ylim((0.90, 1.))
+                if env.wrapped_env.reward_fn.__name__ == 'goal_bias_action_penalty_2':
+                    ax.plot(time_steps, np.mean(action_penalties,axis=0), label="$\mu(R_u)$")
+                    ax.plot(time_steps, np.mean(goal_rews,axis=0), label="$\mu(R_{x_g})$")
+                if args.plt_u_over_train_itr : ax.set_ylim((0.90, 1.))
                 ax.set_ylabel('$R$ ')
                 ax.set_xlabel('$t$ in steps of %s$s$'%(str(timeout)))
                 ax.legend(loc='lower right')
