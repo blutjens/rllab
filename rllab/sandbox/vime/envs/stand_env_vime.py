@@ -214,7 +214,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         # Error
         if 'Err' in state_keys: state[state_keys.index('Err')] = state[state_keys.index('Goal_Height')] - state[state_keys.index('Height')]
 
-        # write state to visualization
+        # Write state to visualization
         if self.vis: self._write_state_to_vis(copy.deepcopy(state)) # Copies the initial state to the Box2D visualization 
 
         # Making sure that prev state contains goal from one step before, s.t. reward function penalizes correct height, goal pairs
@@ -373,7 +373,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         state = self.get_current_obs(partial_obs)
 
         # pass pre-dead_band mapping actions
-        reward = self.compute_reward(self.action - np.sign(self.action) * self.dead_band, done, prev_action=self.prev_action - np.sign(self.prev_action) * self.dead_band)
+        reward = self.compute_reward(self.action, done)
 
         self.print_status(self.action, state, reward)
 
@@ -453,21 +453,24 @@ class StandEnvVime(Box2DEnv, Serializable):
         print('env terminate called')
         self.reset(height=0.75)
 
-        # Clear log
-        #self.summary_writer.flush()
-
         self.test_stand.close()
 
     @overrides
-    def compute_reward(self, action, done, prev_action=0.):
-        # Computations before stepping the world
-        # TODO: check if I should store _prev_state here
-        # TODO check if i should write yield instead of return
-        # yield
-        # Computations after stepping the world
+    def compute_reward(self, action, done):
+        """
+        Computes the reward for the current state, and action in the environment. 
 
-        # TODO: evaluate why reward fn takes in prev_state, not state
-        #print('comp rew', action, done)
+        Input:
+        action (np.array(1,)): action u_t- after observing state x_{t-1}
+        done: flag, if environment is done
+
+        External args:
+        self._prev_state (np.array(obs_dim)): state at x_{t-1}
+        self.action (np.array(1,)): action at u_{t-1}- after observing state x_{t-2}
+
+        Output:
+        reward (float)
+        """
         if not done:
             if self.reward_fn.__name__ == 'goal_bias_action_penalty':
                 reward = self.reward_fn(
@@ -480,11 +483,11 @@ class StandEnvVime(Box2DEnv, Serializable):
             elif self.reward_fn.__name__ == 'goal_bias_action_penalty_2':
                 reward, self.goal_rew_log, self.action_penalty_log = self.reward_fn(
                     self._prev_state,
-                    action,
+                    action - np.sign(action) * self.dead_band,
                     beta=self.beta,
                     sigma=self.sigma,
                     penalty=self.action_penalty,
-                    prev_action=prev_action)
+                    prev_action= self.prev_action - np.sign(self.prev_action) * self.dead_band)
                 if self.verbose: print('gb', reward, goal_rew, action_pen, self._prev_state, action, self.beta, self.sigma, self.action_penalty)                    
             else:
                 reward = self.reward_fn(
@@ -493,7 +496,6 @@ class StandEnvVime(Box2DEnv, Serializable):
                     beta=self.beta,
                     sigma=self.sigma)
         else:
-            # TODO does is make sense to "outbalance" neg episode reward by scaling w t?
             if self.small_neg_rew:
                 reward = -self.beta
             else:

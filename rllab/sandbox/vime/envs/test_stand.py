@@ -511,9 +511,43 @@ class TestStandReal(TestStand):
         down_cycle = max(-up, 0) / constants.max_ma
         self._bridge.send_commands(down_cycle, up_cycle)
         self._bridge.send_commands(down_cycle, up_cycle)
-    
+
+def plot_delta_height_fn(teststand):
+    """
+    Plots height rate (not delta height) as a function of u
+    """
+    matplotlib.rcParams.update({'font.size': 40})
+    teststand._state = 0.55 * np.ones(len(constants.state_keys))
+
+    deadband = 550.
+    teststand.u_lim_min =  -900. + deadband
+    teststand.u_dead_band_min = -550. + deadband
+    teststand.d_h_dot_d_u_up = (0. - teststand.h_dot_max)/(teststand.u_dead_band_min - teststand.u_lim_min) # Slope height rate over control 
+    teststand.u_lim_max = - teststand.u_lim_min
+    teststand.u_dead_band_max = - teststand.u_dead_band_min
+
+    u_min = -1700 + deadband
+    u_max = 1700 - deadband
+    actions = np.linspace(u_min, u_max, 2*u_max)
+    delta_heights = np.zeros(actions.shape)
+    for i, u in enumerate(actions):
+        delta_heights[i] = teststand.delta_height_fn([u]) / teststand.dt
+
+    # Plot states
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 10), dpi=80 )
+    ax.plot(actions, delta_heights)
+    ax.set_xlabel('$u$ in $mA$')
+    ax.set_ylabel('$\dot y$ in $\\frac{m}{s}$')
+    #plt.legend()
+    #plt.suptitle('Simulated forward dyn on tst stand, averaged over %d itr, time/itr %.4fs'%(n_itr, np.mean(times))) # raised title
+    plt.savefig('forw_dyn_tst.png')
+    matplotlib.use( 'tkagg' )
+    plt.show() 
+
+
 if __name__=="__main__":
     testStand = TestStandSimPhysics(timestep=0.02)
     #testStand = TestStandReal(use_proxy=False, env=None, timestep=0.02, tst=True)
     #testStand._send_default_commands()
-    testStand.tst()
+    #testStand.tst()
+    plot_delta_height_fn(testStand)

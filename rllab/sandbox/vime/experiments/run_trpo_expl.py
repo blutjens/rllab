@@ -12,8 +12,6 @@ from rllab.sandbox.vime.envs.stand_env_vime import StandEnvVime
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from rllab.envs.normalized_env import NormalizedEnv
 
-#from rllab.sandbox.vime.algos.trpo_expl import TRPO
-
 from rllab.sandbox.vime.algos.trpo_expl import TRPO
 from rllab.misc.instrument import stub, run_experiment_lite
 import itertools
@@ -23,11 +21,10 @@ stub(globals())
 # Param ranges
 seeds = range(2)
 etas = [0.0001]
-# SwimmerGather hierarchical task
-mdp_classes = [StandEnvVime]#DoublePendulumEnv]#CartpoleSwingupEnvX]#[SwimmerGatherEnv]
+
+mdp_classes = [StandEnvVime]
 mdps = [NormalizedEnv(env=mdp_class())
         for mdp_class in mdp_classes]
-print('number of mdps', len(mdps))
 
 param_cart_product = itertools.product(
     mdps, etas, seeds
@@ -72,7 +69,7 @@ for mdp, eta, seed in param_cart_product:
         plot=plot,
         unn_learning_rate=0.0001
     )
-    print('skrt')
+
     run_experiment_lite(
         algo.train(),
         exp_prefix="trpo-expl",
