@@ -45,7 +45,7 @@ verbose = False
 learn_lqt_plus_rl = False
         
 ## Define network parameters
-seeds = [0]#range(1)
+seeds = [1]#range(1)
 batch_size = 5000
 n_itr = 500#150#1500
 
