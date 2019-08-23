@@ -85,7 +85,6 @@ class TestStandSimPhysics(TestStand):
 
     @overrides
     def init_state(self, height=0.55,init_state_dict=None):
-        #if self.env.verbose: logger.log('Change in Action: %.8f'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2]))))
         self.data_log["change_in_act"] = [0]
 
         if init_state_dict is None:
@@ -104,7 +103,6 @@ class TestStandSimPhysics(TestStand):
                 "Prev_Reward": np.array([0.])
             }
 
-        #print('init state arr', init_state_arr)
         # Convert state dict to np arr(state_dict):
         init_state_arr = np.array([init_state_dict[key][0] for key in constants.state_keys], dtype=np.float32)
 
@@ -240,9 +238,6 @@ class TestStandSimPhysics(TestStand):
         fig, ax = plt.subplots(nrows=n_plts, ncols=1,figsize=(20,10*n_plts), dpi=80 )
 
         for i, key in enumerate(constants.state_keys[:constants.state_keys.index("Height_Rate")+1]):
-          #ax[i].title.set_text('averaged runs:')
-          #for n_i in range(n_itr):
-          #  ax[i].plot(time_steps, states[key][n_i,:], label=key+str(n_i))
           ax[i].plot(time_steps, np.mean(states[key], axis=0), label=key)
           ax[i].fill_between(time_steps, np.mean(states[key],axis=0) - np.std(states[key],axis=0),
                np.mean(states[key],axis=0) + np.std(states[key],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(x_t)$")
@@ -260,18 +255,18 @@ class TestStandSimPhysics(TestStand):
         plt.legend()
         plt.suptitle('Simulated test stand \"physics\"-based forward dyn, averaged over %d itr, time/itr %.4fs'%(n_itr, np.mean(times)))
 
-        plt.savefig('forw_dyn_phys_tst.png')
-        #if(args.display):
-        #  matplotlib.use( 'tkagg' )
-        #  plt.show() 
+        matplotlib.use( 'tkagg' )
+        plt.show() 
 
+        plt.savefig('forw_dyn_phys_tst.png')
+        
 class TestStandSim(TestStand):
     """
     Test stand simulation, based on learned forward dynamics model
     """
     def __init__(self,
             forw_model_type="gaussian",
-            forw_job_dir="../../../../../solenoid/forward_models/gaussian_1000_500",
+            forw_job_dir="../../../../../solenoid/forward_models/gaussian_1000_500", # See README for downloading these files
             env=None):
 
         from solenoid.forward_models import models
@@ -285,9 +280,6 @@ class TestStandSim(TestStand):
         self.init()
 
     def init(self):
-
-
-        #print('shape' ,self.env.observation_space.shape)
         delta_space_shape = (len(constants.delta_low))
         # Create state, action, and delta normalizers.
         states_normalizer = normalizers.Pass(self.env.observation_space.shape)
@@ -342,7 +334,6 @@ class TestStandSim(TestStand):
                 "Prev_Reward": np.array([0.])
             }
 
-        #print('init state arr', init_state_arr)
         # Convert state dict to np arr(state_dict):
         init_state_arr = np.array([init_state_dict[key][0] for key in constants.state_keys[:constants.state_keys.index("Height_Rate")+1]], dtype=np.float32)
 
@@ -388,7 +379,6 @@ class TestStandSim(TestStand):
         _state = np.zeros(len(constants.state_keys))
         _state[:constants.state_keys.index("Height_Rate")] = np.squeeze(self._state_tensor[..., :-1].numpy())
         # Convert np arr to dict
-        #print('_st', _state)
         _state = {key: _state[constants.state_keys.index(key)] for key in constants.state_keys}
         return _state
 
@@ -546,8 +536,11 @@ def plot_delta_height_fn(teststand):
 
 
 if __name__=="__main__":
+    """
+    Main function to test test stand physics sim and real teststand.
+    """
     testStand = TestStandSimPhysics(timestep=0.02)
     #testStand = TestStandReal(use_proxy=False, env=None, timestep=0.02, tst=True)
     #testStand._send_default_commands()
-    #testStand.tst()
-    plot_delta_height_fn(testStand)
+    testStand.tst()
+    #plot_delta_height_fn(testStand)

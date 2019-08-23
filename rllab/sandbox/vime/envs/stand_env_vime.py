@@ -11,7 +11,6 @@ import time
 import copy
 
 import tensorflow as tf
-#from tensorboardX import SummaryWriter
 
 from rllab import spaces
 from rllab.core.serializable import Serializable
@@ -28,10 +27,7 @@ from solenoid.misc.reward_fns import goal_bias
 from solenoid.envs.test_stand import TestStandSim, TestStandSimPhysics, TestStandReal
 
 class StandEnvVime(Box2DEnv, Serializable):
-
     @autoargs.inherit(Box2DEnv.__init__)
-    #@autoargs.arg("reward_fn", type=float,
-    #              help="Reward function")
     def __init__(self,
                  task=None,
                  # standEnv
@@ -60,9 +56,10 @@ class StandEnvVime(Box2DEnv, Serializable):
             self.model_path("stand_env.xml.mako"),
             *args, **kwargs
         )
+        """
+        Rllab test stand environment, wrapped around Box2DEnv for visualization. Can connect to real, gaussian forw., and physics simulator. Rllab is easily compatible with gym.
+        """
         print('INITIALIZING THE ENV')
-        #print('in eager mode at standenv init', tf.executing_eagerly())
-        #tf.enable_eager_execution()
 
         self.vis = vis # if true, visualize in rllab env 
         self.shutoff = False # Set this true to shutdown the test stand
@@ -72,9 +69,6 @@ class StandEnvVime(Box2DEnv, Serializable):
         # self.obs_noise = 0 # Set to val, if additional observation noise desired
         # self.position_only = False # Set to True, if only position observation required
         self.max_weights_pos = 2
-        # TODO find out what these parameters did:
-        # self.goal_weights_pos = goal_weights_pos
-
 
         self.weights = find_body(self.world, "weights")
         self.initial_state = self._state # state that is copied to init Box2DEnv
@@ -99,7 +93,7 @@ class StandEnvVime(Box2DEnv, Serializable):
                 dynamics_path = '../../../../../solenoid/controls/data/teststand_AB.pkl'#teststand_AB_opt_on_sim.pkl'#
             else:
                 dynamics_path = '../../../../../solenoid/controls/data/teststand_AB_opt_on_sim.pkl'
-            # TODO set this path with controls module path.
+            # TODO set this path with controls.module path.
             self.lqt = LQT(dynamics_path, self.use_full_state_lqt)
             
         # Define partial observation 
@@ -131,18 +125,17 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.action_penalty_log = 0.  
         self.goal_rew_log = 0. 
         # Tensorboard
-        #if log_tb: self.writer = SummaryWriter(logdir="/home/bjoern/Desktop/vector-solenoid/rllab/rllab/sandbox/vime/envs/runs/tst/")#runs/tst")#logdir="runs/tst", comment="tst2", filename_suffix="_suffix_tst")
         self.log_tb = log_tb
         self.summary_writer = None
         self.summary = None
         if log_tb:
             # TODO take the line that deletes the logdir out of the code
-            if clear_logdir:
-                import shutil
-                try:
-                    shutil.rmtree(log_dir)
-                except OSError as e:
-                    print("Error: %s - %s."%(e.filename, e.strerror))
+            #if clear_logdir:
+            #    import shutil
+            #    try:
+            #        shutil.rmtree(log_dir)
+            #    except OSError as e:
+            #        print("Error: %s - %s."%(e.filename, e.strerror))
             self.summary_writer = tf.summary.FileWriter(log_dir)
             self.summary = tf.Summary()
 
@@ -161,6 +154,7 @@ class StandEnvVime(Box2DEnv, Serializable):
         self.sim = sim # if true step in forward dyn simulation; if false step on physical test stand
         self.use_proxy=use_proxy
         if self.sim=="sim":
+            # tf.set_eagerly_execution()
             self.test_stand = TestStandSim(env=self)
         elif self.sim=="sim_physics":
             self.test_stand = TestStandSimPhysics(env=self, timestep=self.timestep, data_log=self.data_log)
@@ -200,16 +194,12 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         if 'Height_Rate' in state_keys: state = self._get_height_rate(state)  
 
-
         # Goal
         self.goal_state = self.task(t=self.t + 1)
         state[state_keys.index('Goal_Height')] = self.goal_state
 
         # Goal velocity
-        #if self._prev_state is not None:
         state[state_keys.index('Goal_Velocity')] = state[state_keys.index('Goal_Height')] - self.task(t=self.t)#self._prev_state[state_keys.index('Goal_Height')]
-        #else:
-        #    state[state_keys.index('Goal_Velocity')] = 0.
 
         # Error
         if 'Err' in state_keys: state[state_keys.index('Err')] = state[state_keys.index('Goal_Height')] - state[state_keys.index('Height')]
@@ -233,7 +223,6 @@ class StandEnvVime(Box2DEnv, Serializable):
         Filter full state observation to partial observation
         """
         state = self.get_raw_obs()
-        #print('raw obs', state, state.shape)
         
         partial_obs = partial_obs if partial_obs is not None else self.partial_obs # set self.partial_obs as default if partial_obs is not specified
         if not partial_obs=='full': # Necessary s.t. move_test_stand_to_init can call step 
@@ -249,10 +238,8 @@ class StandEnvVime(Box2DEnv, Serializable):
 
         s = []
         for body in self.world.bodies:
-            #print('body user data', body.userData)
             if body.userData["name"]=="weights":# and not self.vis:
                 # TODO This is very hard-coded. update this if I change visualization
-                #print('forcing state onto vis: height, heigh rate', state[state_keys.index('Height')], state[state_keys.index('Height_Rate')])
                 s.append(np.concatenate([
                     list((0., state[state_keys.index('Height')])),
                     [body.angle],
@@ -269,7 +256,6 @@ class StandEnvVime(Box2DEnv, Serializable):
         state = np.concatenate(s)
         splitted = np.array(state).reshape((-1, 6))
         for body, body_state in zip(self.world.bodies, splitted):
-            #print('setting state for body: with state:', body, body_state)
             xpos, ypos, apos, xvel, yvel, avel = body_state
             body.position = (xpos, ypos)
             body.angle = apos
@@ -299,22 +285,16 @@ class StandEnvVime(Box2DEnv, Serializable):
         """
         Adds log to tensorboard summary
         """
-        #print('LOGGING AT n, t', int(self.n_i/2), self.t, np.sum(np.asarray(self.data_log["rewards"])))
         if self.verbose:
             logger.log('Change in Action: %.8f at %d'%(np.mean(np.asarray(self.data_log["change_in_act"][:-2])), self.n_i))
             logger.log('Reward: %.8f at %d'%(np.mean(np.asarray(self.data_log["rewards"])), self.n_i))
 
         if self.n_i == 1:
-            #print('ADDING SUMMARY')
             self.summary.value.add(tag="data/reward", simple_value=np.sum(np.asarray(self.data_log["rewards"])))
             self.summary.value.add(tag="data/change_in_act", simple_value=np.mean(np.asarray(self.data_log["change_in_act"][:-2])))
         if len(self.data_log["rewards"]) != 0 and self.n_i > 1: 
-            #print('self summarvy val', self.summary.value)
             self.summary.value[0].simple_value = np.sum(np.asarray(self.data_log["rewards"]))
             self.summary.value[1].simple_value = np.mean(np.asarray(self.data_log["change_in_act"][:-2]))
-            #self.summary = tf.Summary(value=[
-            #tf.Summary.Value(tag="summary_tag", simple_value=value), 
-            #])
             self.summary_writer.add_summary(self.summary, int(self.n_i/2))
             self.data_log["rewards"] = []
 
@@ -357,7 +337,6 @@ class StandEnvVime(Box2DEnv, Serializable):
     def sample_goals(self, num_goals):
         # Samples environments (in this case dead_bands) 
         return np.random.uniform(0, 550, size=(num_goals, 1, ))
-
 
     # ========== Standard functions =============
     def step(self, action, partial_obs=None, postprocess_action=True):
@@ -407,7 +386,6 @@ class StandEnvVime(Box2DEnv, Serializable):
             self._goal = reset_args
             self.dead_band = self._goal
 
-        #if self.verbose: print('db', self.dead_band)
         if create_log and self.summary_writer: self.log_tensorboard()
 
         if self.verbose: print('RESET CALLED to height: ', height)
@@ -436,20 +414,25 @@ class StandEnvVime(Box2DEnv, Serializable):
 
     @overrides
     def is_current_done(self):
+        """
+        Return if current episode is done
+        Output (boolean): done
+        """
         done = False
 
         # TODO: set action to zero and set up_cycle, down_cycle if episode terminates
         # TODO: check if weight.position is _prev_state or _state 
         if self._prev_state[state_keys.index('Height')] < constants.height_min: # teststand too high
             done = True
-            print('EPISODE DOWN')
         elif self._prev_state[state_keys.index('Height')] > constants.height_max:
             done = True
-            print('EPISODE DOWN')
         return done 
 
     @overrides 
     def terminate(self):
+        """
+        Drives the real teststand to ground and closes bridge to real teststand
+        """
         print('env terminate called')
         self.reset(height=0.75)
 
@@ -501,7 +484,6 @@ class StandEnvVime(Box2DEnv, Serializable):
             else:
                 reward = -self.t * self.beta
 
-        # yield reward
         return reward
 
     @overrides
@@ -524,8 +506,6 @@ class StandEnvVime(Box2DEnv, Serializable):
     @property
     @overrides
     def observation_space(self):
-        #high = np.asarray([np.inf] * len(constants.state_keys))
-        #low = -high
         return spaces.Box(low=constants.state_low[self.obs_state_ids], high=constants.state_high[self.obs_state_ids])
 
     @overrides
@@ -551,6 +531,9 @@ class StandEnvVime(Box2DEnv, Serializable):
 
 #==================== For testing ========================
 def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
+    """
+    Plots the heights, controls, and rewards to debug standEnv 
+    """
 
     # Plot states
     n_plts = len(constants.state_keys[:constants.state_keys.index('Height_Rate')]) + 1
@@ -558,13 +541,9 @@ def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
     fig, ax = plt.subplots(nrows=n_plts, ncols=1,figsize=(20,10*n_plts), dpi=80 )
 
     for i, key in enumerate(constants.state_keys[constants.state_keys.index('Height'):constants.state_keys.index('Height_Rate')]):
-      #ax[i].title.set_text('averaged runs:')
-      #for n_i in range(n_itr):
-      #  ax[i].plot(time_steps, states[key][n_i,:], label=key+str(n_i))
       ax[i].plot(time_steps, np.mean(states[key], axis=0), label=key)
       ax[i].fill_between(time_steps, np.mean(states[key],axis=0) - np.std(states[key],axis=0),
            np.mean(states[key],axis=0) + np.std(states[key],axis=0), color='blue', alpha=0.2, label="$\pm\sigma(x_t)$")
-      #ax[i].plot(time_steps, goals[b_i,:], label="$x_{des}$")
       ax[i].legend()
       ax[i].set_ylabel(key)
       ax[i].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
@@ -577,8 +556,6 @@ def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
     ax[i+1].plot(time_steps, np.mean(actions, axis=0), label="$u_t$")
     ax[i+1].fill_between(time_steps, np.mean(actions,axis=0) - np.std(actions,axis=0),
            np.mean(actions,axis=0) + np.std(actions,axis=0), color='blue', alpha=0.2, label="$\pm\sigma(u_t)$")
-    #print('goal vel', states["Goal_Velocity"][0, :5])
-    #ax[i+1].plot(time_steps, np.mean(states["Goal_Velocity"], axis=0), label="Goal_Velocity")
     ax[i+1].legend()
     ax[i+1].set_ylabel('$u_t$ in $mA$')
     ax[i+1].set_xlabel('$t$')#' in steps of %s$s$'%(str(timeout)))
@@ -602,10 +579,12 @@ def plot_states(time_steps, n_itr, states, actions, times, rewards,args):
       plt.show() 
 
 def test_optimal_action(args, n_itr, max_time, time_steps, times, start_time, action, rewards, states):
-
+    """
+    Runs a analytically derived optimal feedforward action on the teststandphyisics environment to troubleshoot the environment
+    """
     args.sim = "sym_physics"
 
-    dead_band=0.#550.
+    dead_band=0.#550. # I think this should be 550
     max_action = 900.
     timestep = 0.02
     env = StandEnvVime(sim=args.sim,
@@ -657,6 +636,10 @@ def main():
                         choices=['sim','sim_physics','real'], help='Name of teststand to run on')
     parser.add_argument("--display", action="store_true", help="Display plot")
     args = parser.parse_args()
+
+    """
+    Tests stand environment and TestStandSymPhysics
+    """
 
     n_itr = 5
     max_time = 500
